@@ -16,7 +16,7 @@ on:
 jobs:
   test-3ai-analyzer:
     name: Test 3AI Issue Analyzer
-    uses: ./.github/workflows/3ai-issue-analyzer.yml
+    uses: ./.github/workflows/reusable-3ai-issue-analyzer.yml
     with:
       issue_number: 1
       issue_title: "Test Issue for Workflow Validation"

@@ -13,10 +13,11 @@ NFTT-GitHub-Workflows/
 ├── .github/
 │   ├── CODEOWNERS
 │   └── workflows/
-│       ├── 3ai-issue-analyzer.yml       # 再利用可能ワークフロー
-│       └── test-reusable-workflows.yml  # 自己テスト用
+│       ├── reusable-3ai-issue-analyzer.yml           # 再利用可能ワークフロー
+│       ├── ci-test-reusable-workflows.yml            # 自己テスト用
+│       └── workflow-template-3ai-issue-analyzer.yml  # テンプレート
 ├── .gitignore
-├── LICENSE                              # MIT License
+├── LICENSE                                           # MIT License
 ├── README.md
 └── docs/
     ├── CONTRIBUTING.md
@@ -24,6 +25,20 @@ NFTT-GitHub-Workflows/
     └── workflows/
         └── 3ai-issue-analyzer.md
 ```
+
+## 📁 ファイル構造の説明
+
+### 再利用可能ワークフロー
+- `reusable-*.yml`: 他のリポジトリから呼び出し可能なワークフロー
+- 命名規則: `reusable-{機能名}.yml`
+
+### テストワークフロー  
+- `ci-*.yml`: このリポジトリでの自動テスト用
+- 命名規則: `ci-{テスト種類}.yml`
+
+### テンプレートワークフロー
+- `workflow-template-*.yml`: 呼び出し側で使用するサンプル
+- 命名規則: `workflow-template-{機能名}.yml`
 
 ## 🚀 使用方法
 
@@ -40,7 +55,7 @@ on:
 jobs:
   analyze:
     if: contains(github.event.comment.body, '/analyze')
-    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/3ai-issue-analyzer.yml@main
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
     with:
       issue_number: ${{ github.event.issue.number }}
       issue_title: ${{ github.event.issue.title }}
