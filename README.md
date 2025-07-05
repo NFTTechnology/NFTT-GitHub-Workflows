@@ -14,10 +14,12 @@ NFTT-GitHub-Workflows/
 │   ├── CODEOWNERS
 │   └── workflows/
 │       ├── 3ai-issue-analysis.yml                    # このリポジトリ用3AI分析
-│       ├── reusable-3ai-issue-analyzer-v3.yml        # v3 (推奨) Base64問題解決版
+│       ├── reusable-3ai-issue-analyzer-v5.yml        # v5 (推奨) コスト最適化版
+│       ├── reusable-3ai-issue-analyzer-v4.yml        # v4 コメント履歴対応版
+│       ├── reusable-3ai-issue-analyzer-v3.yml        # v3 シンプル版
 │       ├── reusable-3ai-issue-analyzer-v2.yml        # v2 (非推奨) Base64版
 │       ├── reusable-3ai-issue-analyzer.yml           # v1 (非推奨) 初期版
-│       └── simple-test.yml                           # シンプルテスト用
+│       └── workflow-template-3ai-issue-analyzer.yml  # 実装テンプレート
 ├── .gitignore
 ├── LICENSE                                           # MIT License
 ├── README.md
@@ -44,6 +46,17 @@ NFTT-GitHub-Workflows/
 
 ## 🚀 使用方法
 
+### バージョン選択
+
+| コマンド | バージョン | 説明 |
+|---------|-----------|------|
+| `/analyze` | v5（デフォルト） | コスト最適化版を使用 |
+| `/analyze v3` | v3 | シンプル版を使用 |
+| `/analyze v4` | v4 | コメント履歴版を使用 |
+| `/analyze v5` | v5 | コスト最適化版を使用 |
+
+詳細は[バージョン比較ガイド](docs/VERSION_COMPARISON.md)を参照してください。
+
 ### 対応トリガー
 
 3AI Issue Analyzerは以下のトリガーに対応しています：
@@ -64,7 +77,7 @@ on:
 jobs:
   analyze:
     if: contains(github.event.comment.body, '/analyze')
-    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer-v3.yml@main
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer-v5.yml@main
     with:
       issue_number: ${{ github.event.issue.number }}
       issue_title: ${{ github.event.issue.title }}
