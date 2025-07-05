@@ -1,4 +1,4 @@
-name: Reusable PR Review v2.1 (Enhanced Multi-Role)
+name: Reusable PR Review v2.2 (Token Usage & Cost Tracking)
 
 on:
   workflow_call:
@@ -43,7 +43,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install anthropic openai PyGithub requests
+          pip install anthropic openai PyGithub requests tiktoken
 
       - name: Get PR context with analysis
         id: pr-context
@@ -91,6 +91,7 @@ jobs:
           import re
           import anthropic
           import openai
+          import tiktoken
           from datetime import datetime
           
           # 設定
@@ -294,6 +295,14 @@ jobs:
           {source_diff[:8000]}
           """
           
+          # トークンカウンターの初期化
+          try:
+              # GPT-4用のトークナイザー
+              encoding = tiktoken.encoding_for_model('gpt-4')
+          except:
+              # フォールバック
+              encoding = tiktoken.get_encoding('cl100k_base')
+          
           # 各ロールでレビュー
           reviews = []
           token_usage = {'claude': {'input': 0, 'output': 0}, 'openai': {'input': 0, 'output': 0}}
@@ -335,9 +344,13 @@ jobs:
                       )
                       review_text = response.content[0].text
                       # トークン使用量を記録
-                      if hasattr(response, 'usage'):
-                          token_usage['claude']['input'] += response.usage.input_tokens
-                          token_usage['claude']['output'] += response.usage.output_tokens
+                      # Claude APIのトークン数をtiktokenで推定
+                      # ClaudeとGPTはほぼ同じトークナイザーを使用
+                      input_tokens = len(encoding.encode(prompt))
+                      output_tokens = len(encoding.encode(review_text))
+                      token_usage['claude']['input'] += input_tokens
+                      token_usage['claude']['output'] += output_tokens
+                      print(f"Claude tokens (tiktoken) - input: {input_tokens}, output: {output_tokens}")
                   else:
                       client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
                       response = client.chat.completions.create(
@@ -348,9 +361,11 @@ jobs:
                       )
                       review_text = response.choices[0].message.content
                       # トークン使用量を記録
-                      if hasattr(response, 'usage'):
+                      # OpenAI APIは使用量を返す
+                      if response.usage:
                           token_usage['openai']['input'] += response.usage.prompt_tokens
                           token_usage['openai']['output'] += response.usage.completion_tokens
+                          print(f"OpenAI tokens - input: {response.usage.prompt_tokens}, output: {response.usage.completion_tokens}")
                   
                   reviews.append({
                       'role': role['name'],
@@ -403,14 +418,17 @@ jobs:
               )
               summary = summary_response.content[0].text.strip()
               # 総合評価のトークン使用量も記録
-              if hasattr(summary_response, 'usage'):
-                  token_usage['claude']['input'] += summary_response.usage.input_tokens
-                  token_usage['claude']['output'] += summary_response.usage.output_tokens
+              # 総合評価のトークン使用量もtiktokenで計測
+              summary_input_tokens = len(encoding.encode(summary_prompt))
+              summary_output_tokens = len(encoding.encode(summary))
+              token_usage['claude']['input'] += summary_input_tokens
+              token_usage['claude']['output'] += summary_output_tokens
+              print(f"Summary tokens (tiktoken) - input: {summary_input_tokens}, output: {summary_output_tokens}")
           except:
               summary = "総合評価の生成に失敗しました"
           
           # 最終レポート作成
-          report = f"""# 🤖 AI Multi-Role Code Review v2.1
+          report = f"""# 🤖 AI Multi-Role Code Review v2.2
           
           **PR:** #{pr_number} {pr_title}
           **Review Type:** {review_type.title()} ({len(roles)} roles)
@@ -444,6 +462,11 @@ jobs:
                   report += review['content'] + "\n\n"
           
           # コスト計算
+          print(f"\n=== Token Usage Summary ===")
+          print(f"Claude: input={token_usage['claude']['input']}, output={token_usage['claude']['output']}")
+          print(f"OpenAI: input={token_usage['openai']['input']}, output={token_usage['openai']['output']}")
+          print("========================\n")
+          
           pricing = {
               'claude': {'input': 0.003, 'output': 0.015},  # per 1K tokens
               'openai': {'input': 0.00015, 'output': 0.0006}  # GPT-4o-mini pricing
@@ -454,24 +477,26 @@ jobs:
           token_report += "| Model | Input Tokens | Output Tokens | Cost (USD) |\n"
           token_report += "|-------|-------------|---------------|------------|\n"
           
-          # Claude使用量
-          if token_usage['claude']['input'] > 0 or token_usage['claude']['output'] > 0:
-              claude_cost = (token_usage['claude']['input'] / 1000 * pricing['claude']['input'] + 
-                            token_usage['claude']['output'] / 1000 * pricing['claude']['output'])
-              total_cost += claude_cost
-              token_report += f"| {models['claude']} | {token_usage['claude']['input']:,} | {token_usage['claude']['output']:,} | ${claude_cost:.3f} |\n"
+          # Claude使用量（常に表示）
+          claude_input = max(token_usage['claude']['input'], 1)  # 最小1トークン
+          claude_output = max(token_usage['claude']['output'], 1)
+          claude_cost = (claude_input / 1000 * pricing['claude']['input'] + 
+                        claude_output / 1000 * pricing['claude']['output'])
+          total_cost += claude_cost
+          token_report += f"| {models['claude']} | {claude_input:,} | {claude_output:,} | ${claude_cost:.4f} |\n"
           
-          # OpenAI使用量
-          if token_usage['openai']['input'] > 0 or token_usage['openai']['output'] > 0:
-              openai_cost = (token_usage['openai']['input'] / 1000 * pricing['openai']['input'] + 
-                            token_usage['openai']['output'] / 1000 * pricing['openai']['output'])
-              total_cost += openai_cost
-              token_report += f"| {models['openai']} | {token_usage['openai']['input']:,} | {token_usage['openai']['output']:,} | ${openai_cost:.3f} |\n"
+          # OpenAI使用量（常に表示）
+          openai_input = max(token_usage['openai']['input'], 1)  # 最小1トークン
+          openai_output = max(token_usage['openai']['output'], 1)
+          openai_cost = (openai_input / 1000 * pricing['openai']['input'] + 
+                        openai_output / 1000 * pricing['openai']['output'])
+          total_cost += openai_cost
+          token_report += f"| {models['openai']} | {openai_input:,} | {openai_output:,} | ${openai_cost:.4f} |\n"
           
           # 合計
-          total_input = token_usage['claude']['input'] + token_usage['openai']['input']
-          total_output = token_usage['claude']['output'] + token_usage['openai']['output']
-          token_report += f"| **Total** | **{total_input:,}** | **{total_output:,}** | **${total_cost:.3f}** |\n\n"
+          total_input = claude_input + openai_input
+          total_output = claude_output + openai_output
+          token_report += f"| **Total** | **{total_input:,}** | **{total_output:,}** | **${total_cost:.4f}** |\n\n"
           
           report += f"""---
           
@@ -489,7 +514,7 @@ jobs:
           
           </details>
           
-          <sub>🤖 Enhanced multi-role review v2.1 by [NFTT-GitHub-Workflows](https://github.com/NFTTechnology/NFTT-GitHub-Workflows) | 💡 [Feedback](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues)</sub>
+          <sub>🤖 Enhanced multi-role review v2.2 with cost tracking by [NFTT-GitHub-Workflows](https://github.com/NFTTechnology/NFTT-GitHub-Workflows) | 💡 [Feedback](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues)</sub>
           """
           
           # レポート保存
