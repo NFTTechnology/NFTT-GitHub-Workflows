@@ -7,7 +7,7 @@ on:
 jobs:
   analyze:
     if: contains(github.event.comment.body, '/analyze')
-    uses: ./.github/workflows/reusable-3ai-issue-analyzer-v2.yml
+    uses: ./.github/workflows/reusable-3ai-issue-analyzer-v3.yml
     with:
       issue_number: ${{ github.event.issue.number }}
       issue_title: ${{ github.event.issue.title }}
