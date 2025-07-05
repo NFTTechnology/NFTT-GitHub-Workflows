@@ -43,7 +43,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install anthropic openai PyGithub requests
+          pip install anthropic openai PyGithub requests tiktoken
 
       - name: Get PR context with analysis
         id: pr-context
@@ -91,6 +91,7 @@ jobs:
           import re
           import anthropic
           import openai
+          import tiktoken
           from datetime import datetime
           
           # 設定
@@ -294,6 +295,14 @@ jobs:
           {source_diff[:8000]}
           """
           
+          # トークンカウンターの初期化
+          try:
+              # GPT-4用のトークナイザー
+              encoding = tiktoken.encoding_for_model('gpt-4')
+          except:
+              # フォールバック
+              encoding = tiktoken.get_encoding('cl100k_base')
+          
           # 各ロールでレビュー
           reviews = []
           token_usage = {'claude': {'input': 0, 'output': 0}, 'openai': {'input': 0, 'output': 0}}
@@ -335,14 +344,13 @@ jobs:
                       )
                       review_text = response.content[0].text
                       # トークン使用量を記録
-                      print(f"Claude response type: {type(response)}")
-                      print(f"Claude response dir: {dir(response)}")
-                      if hasattr(response, 'usage'):
-                          print(f"Claude usage: {response.usage}")
-                          token_usage['claude']['input'] += response.usage.input_tokens
-                          token_usage['claude']['output'] += response.usage.output_tokens
-                      else:
-                          print("Claude response has no usage attribute")
+                      # Claude APIのトークン数をtiktokenで推定
+                      # ClaudeとGPTはほぼ同じトークナイザーを使用
+                      input_tokens = len(encoding.encode(prompt))
+                      output_tokens = len(encoding.encode(review_text))
+                      token_usage['claude']['input'] += input_tokens
+                      token_usage['claude']['output'] += output_tokens
+                      print(f"Claude tokens (tiktoken) - input: {input_tokens}, output: {output_tokens}")
                   else:
                       client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
                       response = client.chat.completions.create(
@@ -353,11 +361,11 @@ jobs:
                       )
                       review_text = response.choices[0].message.content
                       # トークン使用量を記録
-                      print(f"OpenAI response type: {type(response)}")
-                      print(f"OpenAI usage: {response.usage if hasattr(response, 'usage') else 'No usage'}")
-                      if hasattr(response, 'usage') and response.usage:
+                      # OpenAI APIは使用量を返す
+                      if response.usage:
                           token_usage['openai']['input'] += response.usage.prompt_tokens
                           token_usage['openai']['output'] += response.usage.completion_tokens
+                          print(f"OpenAI tokens - input: {response.usage.prompt_tokens}, output: {response.usage.completion_tokens}")
                   
                   reviews.append({
                       'role': role['name'],
@@ -410,11 +418,12 @@ jobs:
               )
               summary = summary_response.content[0].text.strip()
               # 総合評価のトークン使用量も記録
-              print(f"Summary response type: {type(summary_response)}")
-              if hasattr(summary_response, 'usage'):
-                  print(f"Summary usage: {summary_response.usage}")
-                  token_usage['claude']['input'] += summary_response.usage.input_tokens
-                  token_usage['claude']['output'] += summary_response.usage.output_tokens
+              # 総合評価のトークン使用量もtiktokenで計測
+              summary_input_tokens = len(encoding.encode(summary_prompt))
+              summary_output_tokens = len(encoding.encode(summary))
+              token_usage['claude']['input'] += summary_input_tokens
+              token_usage['claude']['output'] += summary_output_tokens
+              print(f"Summary tokens (tiktoken) - input: {summary_input_tokens}, output: {summary_output_tokens}")
           except:
               summary = "総合評価の生成に失敗しました"
           
