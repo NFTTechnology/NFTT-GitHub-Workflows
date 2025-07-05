@@ -33,13 +33,13 @@ NFTT-GitHub-Workflowsは、**トリプルAI分析システム**を搭載した�
 3つの業界最先端AIモデルによる多角的分析
 
 </td>
-<td width="33%" align="center">
+<td width="33%" align="center" vlign="top">
 
 ### ⚡ パフォーマンス
 並列AI処理により手動レビューの20倍高速
 
 </td>
-<td width="33%" align="center">
+<td width="33%" align="center" vlign="top">
 
 ### 💎 価値
 従来のGPT-4実装と比較して95%のコスト削減
@@ -67,7 +67,7 @@ NFTT-GitHub-Workflowsは、**トリプルAI分析システム**を搭載した�
 
 <table>
 <tr>
-<td width="50%">
+<td width="50%" vlign="top">
 
 #### 🤖 トリプルAIインテリジェンス
 - **Claude 3.5 Sonnet**: 深いコード理解とセキュリティ分析
@@ -75,7 +75,7 @@ NFTT-GitHub-Workflowsは、**トリプルAI分析システム**を搭載した�
 - **Gemini Pro**: パフォーマンス最適化とベストプラクティス
 
 </td>
-<td width="50%">
+<td width="50%" vlign="top">
 
 #### 🛡️ エンタープライズセキュリティ
 - セキュアなAPIキー管理
@@ -86,7 +86,7 @@ NFTT-GitHub-Workflowsは、**トリプルAI分析システム**を搭載した�
 </td>
 </tr>
 <tr>
-<td width="50%">
+<td width="50%" vlign="top">
 
 #### 📈 スケーラビリティ
 - 1000以上のIssueを同時処理
@@ -95,7 +95,7 @@ NFTT-GitHub-Workflowsは、**トリプルAI分析システム**を搭載した�
 - レート制限管理
 
 </td>
-<td width="50%">
+<td width="50%" vlign="top">
 
 #### 🔧 柔軟性
 - 5つの特化型ワークフローバージョン
@@ -316,7 +316,7 @@ jobs:
 
 <table>
 <tr>
-<td width="50%">
+<td width="50%" vlign="top">
 
 ### 📈 成功指標
 - **10,000以上**の自動レビュー完了
@@ -325,7 +325,7 @@ jobs:
 - **4.9/5**の開発者満足度
 
 </td>
-<td width="50%">
+<td width="50%" vlign="top">
 
 ### 🏢 信頼する組織
 - 開発を加速するスタートアップ
@@ -347,9 +347,7 @@ jobs:
 
 ### リソース
 - 📧 **メール**: goda @ nftt.co.jp
-- 📝 **ブログ**: [最新情報とチュートリアル](https://blog.nfttechnology.com)
-- 🎥 **YouTube**: [ビデオチュートリアル](https://youtube.com/@nfttechnology)
-- 🐦 **Twitter**: [@NFTTechnology](https://twitter.com/nfttechnology)
+- 📝 **コーポレートページ**: [会社ページです。](https://nftt.co.jp)
 
 ## 📜 ライセンス
 
