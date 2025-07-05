@@ -1,0 +1,17 @@
+name: 3AI Issue Analysis
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  analyze:
+    if: contains(github.event.comment.body, '/analyze')
+    uses: ./.github/workflows/reusable-3ai-issue-analyzer-v2.yml
+    with:
+      issue_number: ${{ github.event.issue.number }}
+      issue_title: ${{ github.event.issue.title }}
+      issue_body: ${{ github.event.issue.body }}
+      repository: ${{ github.repository }}
+      comment_id: ${{ github.event.comment.id }}
+    secrets: inherit
