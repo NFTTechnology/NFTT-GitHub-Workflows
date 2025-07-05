@@ -60,14 +60,14 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr_number,
-              body: `🤖 AI Code Review を開始します...\n- Version: v2.2 (Token Usage & Cost Tracking)\n- Type: ${type}\n- Repository: ${context.repo.repo}`
+              body: `🤖 AI Code Review を開始します...\n- Type: ${type}\n- Repository: ${context.repo.repo}`
             });
 
-  # v2.2レビュー（トークン使用量・コスト表示版）
+  # PRレビュー実行
   review:
     needs: trigger-review
     if: always()
-    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review-v2.2.yml@main
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review.yml@main
     with:
       pr_number: ${{ needs.trigger-review.outputs.number }}
       repository: ${{ github.repository }}

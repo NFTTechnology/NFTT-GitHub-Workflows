@@ -30,8 +30,8 @@ jobs:
        contains(github.event.comment.body, '/analyze')) ||
       github.event_name == 'workflow_dispatch'
     
-    # v3（推奨）を使用
-    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer-v3.yml@main
+    # デフォルト版（最新版）を使用
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
     
     with:
       issue_number: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.issue_number || github.event.issue.number }}
