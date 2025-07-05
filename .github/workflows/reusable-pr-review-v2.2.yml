@@ -477,24 +477,26 @@ jobs:
           token_report += "| Model | Input Tokens | Output Tokens | Cost (USD) |\n"
           token_report += "|-------|-------------|---------------|------------|\n"
           
-          # Claude使用量
-          if token_usage['claude']['input'] > 0 or token_usage['claude']['output'] > 0:
-              claude_cost = (token_usage['claude']['input'] / 1000 * pricing['claude']['input'] + 
-                            token_usage['claude']['output'] / 1000 * pricing['claude']['output'])
-              total_cost += claude_cost
-              token_report += f"| {models['claude']} | {token_usage['claude']['input']:,} | {token_usage['claude']['output']:,} | ${claude_cost:.3f} |\n"
+          # Claude使用量（常に表示）
+          claude_input = max(token_usage['claude']['input'], 1)  # 最小1トークン
+          claude_output = max(token_usage['claude']['output'], 1)
+          claude_cost = (claude_input / 1000 * pricing['claude']['input'] + 
+                        claude_output / 1000 * pricing['claude']['output'])
+          total_cost += claude_cost
+          token_report += f"| {models['claude']} | {claude_input:,} | {claude_output:,} | ${claude_cost:.4f} |\n"
           
-          # OpenAI使用量
-          if token_usage['openai']['input'] > 0 or token_usage['openai']['output'] > 0:
-              openai_cost = (token_usage['openai']['input'] / 1000 * pricing['openai']['input'] + 
-                            token_usage['openai']['output'] / 1000 * pricing['openai']['output'])
-              total_cost += openai_cost
-              token_report += f"| {models['openai']} | {token_usage['openai']['input']:,} | {token_usage['openai']['output']:,} | ${openai_cost:.3f} |\n"
+          # OpenAI使用量（常に表示）
+          openai_input = max(token_usage['openai']['input'], 1)  # 最小1トークン
+          openai_output = max(token_usage['openai']['output'], 1)
+          openai_cost = (openai_input / 1000 * pricing['openai']['input'] + 
+                        openai_output / 1000 * pricing['openai']['output'])
+          total_cost += openai_cost
+          token_report += f"| {models['openai']} | {openai_input:,} | {openai_output:,} | ${openai_cost:.4f} |\n"
           
           # 合計
-          total_input = token_usage['claude']['input'] + token_usage['openai']['input']
-          total_output = token_usage['claude']['output'] + token_usage['openai']['output']
-          token_report += f"| **Total** | **{total_input:,}** | **{total_output:,}** | **${total_cost:.3f}** |\n\n"
+          total_input = claude_input + openai_input
+          total_output = claude_output + openai_output
+          token_report += f"| **Total** | **{total_input:,}** | **{total_output:,}** | **${total_cost:.4f}** |\n\n"
           
           report += f"""---
           
