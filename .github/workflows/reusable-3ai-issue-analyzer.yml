@@ -30,9 +30,6 @@ on:
         required: true
       GEMINI_API_KEY:
         required: true
-      GITHUB_TOKEN:
-        required: false
-        description: 'GitHub token for API calls (defaults to github.token)'
     outputs:
       analysis_report:
         description: '3AI analysis report'
@@ -62,7 +59,7 @@ jobs:
         if: inputs.comment_id
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN || github.token }}
+          github-token: ${{ github.token }}
           script: |
             const [owner, repo] = '${{ inputs.repository }}'.split('/');
             await github.rest.reactions.createForIssueComment({
@@ -279,7 +276,7 @@ jobs:
         if: inputs.issue_number
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN || github.token }}
+          github-token: ${{ github.token }}
           script: |
             const fs = require('fs');
             let analysis = '';
