@@ -1,0 +1,25 @@
+name: Simple Reusable Test
+
+on:
+  workflow_call:
+    inputs:
+      test_message:
+        description: 'Test message'
+        required: true
+        type: string
+    outputs:
+      result:
+        description: 'Test result'
+        value: ${{ jobs.test.outputs.result }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.test.outputs.result }}
+    steps:
+      - name: Simple test
+        id: test
+        run: |
+          echo "✅ Test message: ${{ inputs.test_message }}"
+          echo "result=success" >> $GITHUB_OUTPUT
