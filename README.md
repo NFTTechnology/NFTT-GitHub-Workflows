@@ -242,7 +242,7 @@ jobs:
 
 ## 💰 コスト見積もり
 
-### API料金比較（2024年最新）
+### API料金比較（2025年最新）
 
 | AI Provider | 入力トークン | 出力トークン | 特徴 |
 |------------|--------------|--------------|------|
@@ -334,7 +334,7 @@ MIT License - NFTTechnology
 - [Google Gemini API ドキュメント](https://ai.google.dev/tutorials/rest_quickstart)
 
 ### ベストプラクティス
-- [再利用可能ワークフローのベストプラクティス（2024年版）](https://earthly.dev/blog/github-actions-reusable-workflows/)
+- [再利用可能ワークフローのベストプラクティス](https://earthly.dev/blog/github-actions-reusable-workflows/)
 - [GitHub Actions コスト削減ガイド](https://www.blacksmith.sh/blog/how-to-reduce-spend-in-github-actions)
 
 ## 🤝 コントリビュート
@@ -357,7 +357,7 @@ MIT License - NFTTechnology
 
 *このリポジトリはNFTTechnology組織の公式ワークフロー集です*
 
-**最終更新**: 2024年12月
+**最終更新**: 2025年7月
 
 ## 🌟 Star History
 

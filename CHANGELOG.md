@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation updates
 - New `USAGE_PATTERNS.md` with extensive implementation examples
 - Architecture diagram in README
-- Latest AI model pricing comparison (2024)
+- Latest AI model pricing comparison (2025)
 - GitHub Actions best practices and limits information
 - Links to official documentation for all technologies
 - Use case examples by project size and purpose
@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved troubleshooting guides
 - Restructured README with 3AI approach (説明・実装・利用)
 - Enhanced `3AI_ANALYZER_GUIDE.md` with cost information and latest links
-- Added 2024 pricing comparison for Claude 3.5, GPT-4, and Gemini
+- Added 2025 pricing comparison for Claude 3.5, GPT-4, and Gemini
 - Updated GitHub Actions free tier information
 
 ### Removed
