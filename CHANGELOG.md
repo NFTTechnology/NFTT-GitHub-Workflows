@@ -14,11 +14,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Badges for repository status
 - Star History visualization
 - Comprehensive documentation updates
+- New `USAGE_PATTERNS.md` with extensive implementation examples
+- Architecture diagram in README
+- Latest AI model pricing comparison (2024)
+- GitHub Actions best practices and limits information
+- Links to official documentation for all technologies
+- Use case examples by project size and purpose
+- Integration patterns (Slack, PRs, etc.)
+- Performance optimization strategies
 
 ### Changed
 - Updated documentation with latest API versions
 - Enhanced security best practices
 - Improved troubleshooting guides
+- Restructured README with 3AI approach (説明・実装・利用)
+- Enhanced `3AI_ANALYZER_GUIDE.md` with cost information and latest links
+- Added 2024 pricing comparison for Claude 3.5, GPT-4, and Gemini
+- Updated GitHub Actions free tier information
+
+### Removed
+- Duplicate documentation files (`3ai-issue-analyzer.md`, `quick-setup-guide.md`)
+- Project-specific files (`implementation-plan-share-manga.md`)
+- Redundant `workflows` directory in docs
 
 ## [v2.2.0] - 2024-11-26
 

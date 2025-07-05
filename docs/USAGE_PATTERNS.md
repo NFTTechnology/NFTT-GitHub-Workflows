@@ -1,129 +1,435 @@
-# 3AI Analyzer 使用パターン集
+# 使用パターン集
 
-## 問題: Issue本文だけでは不十分な場合
+## 📋 概要
 
-### パターン1: サマリーコメントを使う
+NFTT-GitHub-Workflowsの実践的な使用パターンを紹介します。プロジェクトの規模や目的に応じて、最適なパターンを選択してください。
 
-```markdown
-# Issue本文
-バグがある
+## 🏗️ プロジェクト規模別パターン
 
-# コメント
-議論の結果、以下が判明：
-- 原因: APIのタイムアウト
-- 影響: 全ユーザーの30%
-- 対策案: リトライ機能の実装
+### 小規模プロジェクト（〜10人チーム）
 
-/analyze
-```
-
-### パターン2: Issue本文を更新してから分析
-
-1. 議論が進んだらIssue本文を編集
-2. 「Edit」で最新の情報を追加
-3. その後 `/analyze` を実行
-
-### パターン3: 分析用のサマリーを書く
-
-```markdown
-## 分析依頼
-
-現在までの議論をまとめると：
-1. 最初の問題: XXX
-2. @user1 の指摘: YYY
-3. @user2 の提案: ZZZ
-
-これらを踏まえて分析をお願いします。
-
-/analyze
-```
-
-## 推奨される運用方法
-
-### 1. テンプレートを使う
-
-```markdown
-## 問題の概要
-（明確に記載）
-
-## 現在の動作
-（具体例を含める）
-
-## 期待する動作
-（明確なゴールを設定）
-
-## 技術的な詳細
-- 環境:
-- バージョン:
-- エラーログ:
-```
-
-### 2. 段階的に分析
-
-- **初回**: Issue作成時に基本分析
-- **中間**: 議論が進んだらサマリー付きで再分析
-- **最終**: 実装前に最終確認の分析
-
-### 3. ラベルで制御
-
+#### 推奨設定
 ```yaml
-# 自動分析が必要なIssue
-labels: [bug, analyze]
+# .github/workflows/simple-3ai.yml
+name: 3AI Analysis (Small Team)
+on:
+  issue_comment:
+    types: [created]
 
-# 手動分析のみ
-labels: [discussion]
-```
-
-## v4（コメント履歴対応版）の使用
-
-より高度な分析が必要な場合は、v4を使用：
-
-```yaml
 jobs:
   analyze:
-    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer-v4.yml@main
+    if: |
+      contains(github.event.comment.body, '/analyze') &&
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'MEMBER')
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
     with:
       issue_number: ${{ github.event.issue.number }}
       issue_title: ${{ github.event.issue.title }}
       issue_body: ${{ github.event.issue.body }}
       repository: ${{ github.repository }}
-      include_comments: true  # コメント履歴を含める
-      max_comments: 20       # 最新20件のコメントを分析
+      # v5使用でコスト最適化
+      version: "v5"
     secrets: inherit
 ```
 
-## アンチパターン
+#### 特徴
+- メンバーのみ分析実行可能
+- コスト最適化版（v5）使用
+- 手動トリガーで無駄な実行を防止
 
-### ❌ 避けるべき使い方
+### 中規模プロジェクト（10〜50人チーム）
 
-1. **情報不足のまま分析**
-   ```
-   タイトル: バグ
-   本文: 動かない
-   ```
+#### 推奨設定
+```yaml
+# .github/workflows/medium-3ai.yml
+name: 3AI Analysis (Medium Team)
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened, labeled]
 
-2. **議論が発散している状態で分析**
-   - まず議論を整理してから
+jobs:
+  analyze-comment:
+    if: contains(github.event.comment.body, '/analyze')
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    with:
+      issue_number: ${{ github.event.issue.number }}
+      issue_title: ${{ github.event.issue.title }}
+      issue_body: ${{ github.event.issue.body }}
+      repository: ${{ github.repository }}
+    secrets: inherit
 
-3. **実装詳細が決まっていない段階で分析**
-   - 方向性を決めてから
+  analyze-critical:
+    if: |
+      github.event_name == 'issues' &&
+      contains(github.event.issue.labels.*.name, 'critical')
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    with:
+      issue_number: ${{ github.event.issue.number }}
+      issue_title: ${{ github.event.issue.title }}
+      issue_body: ${{ github.event.issue.body }}
+      repository: ${{ github.repository }}
+      # 重要なIssueはv4で詳細分析
+      version: "v4"
+    secrets: inherit
+```
 
-### ✅ 良い使い方
+#### 特徴
+- 重要度に応じたバージョン使い分け
+- criticalラベルで自動分析
+- 通常はコメントトリガー
 
-1. **具体的な情報を含める**
-   ```
-   タイトル: ユーザー登録API が 500 エラーを返す
-   本文: 
-   - 発生条件: メールアドレスに'+'を含む場合
-   - エラーログ: [詳細]
-   - 再現手順: [1, 2, 3]
-   ```
+### 大規模プロジェクト（50人以上）
 
-2. **議論の結論を明記**
-   ```
-   ## 議論の結果
-   - 採用案: A案（理由: パフォーマンス）
-   - 却下案: B案（理由: 複雑性）
-   
-   /analyze
-   ```
+#### 推奨設定
+```yaml
+# .github/workflows/enterprise-3ai.yml
+name: 3AI Analysis (Enterprise)
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue_numbers:
+        description: 'Issue numbers to analyze (comma-separated)'
+        required: true
+      ai_models:
+        description: 'AI models to use'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - claude-only
+          - gpt-only
+          - gemini-only
+
+jobs:
+  check-permissions:
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.check.outputs.allowed }}
+    steps:
+      - id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const teams = ['reviewers', 'maintainers'];
+            const membership = await github.rest.teams.getMembershipForUserInOrg({
+              org: context.repo.owner,
+              team_slug: teams[0],
+              username: context.actor
+            });
+            return membership.status === 200;
+
+  analyze:
+    needs: check-permissions
+    if: needs.check-permissions.outputs.allowed == 'true'
+    strategy:
+      matrix:
+        issue: ${{ fromJson(github.event.inputs.issue_numbers || '[]') }}
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    with:
+      issue_number: ${{ matrix.issue }}
+      ai_models: ${{ github.event.inputs.ai_models }}
+    secrets: inherit
+```
+
+#### 特徴
+- チーム権限による制御
+- バッチ処理対応
+- AIモデル選択可能
+- コスト管理機能
+
+## 🎯 目的別パターン
+
+### バグ修正の影響分析
+
+```yaml
+name: Bug Impact Analysis
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  analyze-bug:
+    if: contains(github.event.issue.labels.*.name, 'bug')
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    with:
+      issue_number: ${{ github.event.issue.number }}
+      issue_title: ${{ github.event.issue.title }}
+      issue_body: ${{ github.event.issue.body }}
+      repository: ${{ github.repository }}
+      # カスタムプロンプト
+      custom_prompt: |
+        このバグの影響範囲を分析してください：
+        1. 影響を受けるコンポーネント
+        2. ユーザーへの影響度
+        3. 修正の緊急度
+        4. 推奨される修正アプローチ
+    secrets: inherit
+```
+
+### 新機能提案の評価
+
+```yaml
+name: Feature Proposal Evaluation
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  evaluate-feature:
+    if: contains(github.event.issue.labels.*.name, 'enhancement')
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    with:
+      issue_number: ${{ github.event.issue.number }}
+      issue_title: ${{ github.event.issue.title }}
+      issue_body: ${{ github.event.issue.body }}
+      repository: ${{ github.repository }}
+      version: "v4"  # コメント履歴も含めて評価
+      custom_prompt: |
+        この機能提案を評価してください：
+        1. 技術的実現可能性
+        2. 既存機能との整合性
+        3. 実装工数の見積もり
+        4. 潜在的なリスク
+    secrets: inherit
+```
+
+### セキュリティ脆弱性の分析
+
+```yaml
+name: Security Vulnerability Analysis
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  analyze-security:
+    if: contains(github.event.issue.labels.*.name, 'security')
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    with:
+      issue_number: ${{ github.event.issue.number }}
+      issue_title: ${{ github.event.issue.title }}
+      issue_body: ${{ github.event.issue.body }}
+      repository: ${{ github.repository }}
+      # セキュリティ分析に特化
+      custom_prompt: |
+        セキュリティの観点から分析してください：
+        1. 脆弱性の深刻度（CVSS）
+        2. 攻撃ベクトル
+        3. 影響範囲
+        4. 緊急対応策
+        5. 根本的な修正方法
+      # プライベートコメントで結果を投稿
+      private_comment: true
+    secrets: inherit
+```
+
+## 🔄 統合パターン
+
+### Slack通知との連携
+
+```yaml
+name: 3AI with Slack Notification
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  analyze:
+    if: contains(github.event.comment.body, '/analyze')
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    with:
+      issue_number: ${{ github.event.issue.number }}
+      issue_title: ${{ github.event.issue.title }}
+      issue_body: ${{ github.event.issue.body }}
+      repository: ${{ github.repository }}
+    secrets: inherit
+
+  notify:
+    needs: analyze
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            3AI分析完了
+            Issue: #${{ github.event.issue.number }}
+            結果: ${{ needs.analyze.result }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+```
+
+### PRレビューとの組み合わせ
+
+```yaml
+name: Comprehensive Review
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  # 関連Issueの分析
+  analyze-linked-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        id: get-issues
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+            const issueRefs = body.match(/#(\d+)/g) || [];
+            return issueRefs.map(ref => ref.substring(1));
+
+      - name: Analyze Issues
+        if: steps.get-issues.outputs.result != '[]'
+        uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+        with:
+          issue_numbers: ${{ steps.get-issues.outputs.result }}
+        secrets: inherit
+
+  # PRのコードレビュー
+  pr-review:
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review.yml@main
+    with:
+      pr_number: ${{ github.event.pull_request.number }}
+    secrets: inherit
+```
+
+## 🚀 高度な使用例
+
+### カスタムAI設定
+
+```yaml
+name: Custom AI Configuration
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        required: true
+
+jobs:
+  custom-analysis:
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    with:
+      issue_number: ${{ github.event.inputs.issue_number }}
+      # AI個別設定
+      claude_config: |
+        model: claude-3-opus-20240229
+        max_tokens: 4000
+        temperature: 0.3
+      openai_config: |
+        model: gpt-4-turbo-preview
+        max_tokens: 3000
+        temperature: 0.5
+      gemini_config: |
+        model: gemini-pro
+        max_output_tokens: 2048
+        temperature: 0.4
+    secrets: inherit
+```
+
+### 多言語対応
+
+```yaml
+name: Multilingual Analysis
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  detect-language:
+    runs-on: ubuntu-latest
+    outputs:
+      language: ${{ steps.detect.outputs.language }}
+    steps:
+      - id: detect
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 簡易的な言語検出
+            const body = context.payload.issue.body;
+            if (/[\u3040-\u309F\u30A0-\u30FF]/.test(body)) return 'ja';
+            if (/[\u4E00-\u9FAF]/.test(body)) return 'zh';
+            return 'en';
+
+  analyze:
+    needs: detect-language
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    with:
+      issue_number: ${{ github.event.issue.number }}
+      language: ${{ needs.detect-language.outputs.language }}
+      custom_prompt: |
+        言語: ${{ needs.detect-language.outputs.language }}
+        この言語で分析結果を提供してください。
+    secrets: inherit
+```
+
+## 📊 パフォーマンス最適化
+
+### 並列処理パターン
+
+```yaml
+name: Parallel Analysis
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 毎日深夜2時
+
+jobs:
+  get-issues:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/github-script@v7
+        id: set-matrix
+        with:
+          script: |
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'needs-analysis',
+              state: 'open',
+              per_page: 20
+            });
+            return { issues: issues.data.map(i => i.number) };
+
+  analyze:
+    needs: get-issues
+    strategy:
+      matrix: ${{ fromJson(needs.get-issues.outputs.matrix) }}
+      max-parallel: 3  # 同時実行数を制限
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    with:
+      issue_number: ${{ matrix.issues }}
+    secrets: inherit
+```
+
+## 🎯 ベストプラクティス
+
+1. **コスト管理**
+   - 定期実行は深夜帯に設定
+   - 重要度に応じてAIモデルを選択
+   - 不要な再実行を防ぐキャッシュ活用
+
+2. **セキュリティ**
+   - 権限チェックを必須化
+   - センシティブ情報は環境変数で管理
+   - 実行履歴の定期監査
+
+3. **保守性**
+   - ワークフローの共通化
+   - 設定値の外部化
+   - エラーハンドリングの充実
+
+---
+
+**最終更新**: 2024年12月
