@@ -1,0 +1,66 @@
+name: 3AI PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+
+jobs:
+  pr-review:
+    # PRが開かれた時、または PR で /review コメントされた時
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'issue_comment' && 
+       github.event.issue.pull_request != null &&
+       contains(github.event.comment.body, '/review'))
+    
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get PR details
+        id: pr-details
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            let pr_number;
+            if (context.eventName === 'pull_request') {
+              pr_number = context.payload.pull_request.number;
+            } else {
+              pr_number = context.issue.number;
+            }
+            
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr_number
+            });
+            
+            // PR情報を出力
+            core.setOutput('title', pr.data.title);
+            core.setOutput('body', pr.data.body || '');
+            core.setOutput('number', pr_number);
+            
+            // 変更されたファイルを取得
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr_number
+            });
+            
+            const changedFiles = files.data.map(f => ({
+              filename: f.filename,
+              status: f.status,
+              additions: f.additions,
+              deletions: f.deletions,
+              patch: f.patch || ''
+            }));
+            
+            core.setOutput('changed_files', JSON.stringify(changedFiles));
+      
+      - name: Analyze PR with 3AI
+        # ここで3AIを呼び出す（PRレビュー専用の実装が必要）
+        run: |
+          echo "PR #${{ steps.pr-details.outputs.number }}: ${{ steps.pr-details.outputs.title }}"
+          echo "Changed files: ${{ steps.pr-details.outputs.changed_files }}"
+          # TODO: 3AI PR レビュー実装
