@@ -72,6 +72,14 @@ jobs:
 - `OPENAI_API_KEY` - OpenAI API用
 - `GEMINI_API_KEY` - Google Gemini API用
 
+### 設定方法
+
+1. リポジトリの Settings → Secrets and variables → Actions に移動
+2. "New repository secret" をクリック
+3. 各APIキーを追加
+
+**注意**: 無料プランでは組織シークレットの共有に制限があるため、各リポジトリに個別に設定する必要があります。
+
 ## 📝 ライセンス
 
 MIT License - NFTTechnology
