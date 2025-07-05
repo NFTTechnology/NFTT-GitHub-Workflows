@@ -1,4 +1,4 @@
-name: Reusable PR Review v2.1 (Enhanced Multi-Role)
+name: Reusable PR Review v2.2 (Token Usage & Cost Tracking)
 
 on:
   workflow_call:
@@ -410,7 +410,7 @@ jobs:
               summary = "総合評価の生成に失敗しました"
           
           # 最終レポート作成
-          report = f"""# 🤖 AI Multi-Role Code Review v2.1
+          report = f"""# 🤖 AI Multi-Role Code Review v2.2
           
           **PR:** #{pr_number} {pr_title}
           **Review Type:** {review_type.title()} ({len(roles)} roles)
@@ -489,7 +489,7 @@ jobs:
           
           </details>
           
-          <sub>🤖 Enhanced multi-role review v2.1 by [NFTT-GitHub-Workflows](https://github.com/NFTTechnology/NFTT-GitHub-Workflows) | 💡 [Feedback](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues)</sub>
+          <sub>🤖 Enhanced multi-role review v2.2 with cost tracking by [NFTT-GitHub-Workflows](https://github.com/NFTTechnology/NFTT-GitHub-Workflows) | 💡 [Feedback](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues)</sub>
           """
           
           # レポート保存
