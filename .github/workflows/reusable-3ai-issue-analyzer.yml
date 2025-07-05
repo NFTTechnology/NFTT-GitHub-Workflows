@@ -265,9 +265,10 @@ jobs:
         run: |
           if [ -f issue_analysis.txt ]; then
             # GitHub Outputに保存（マルチライン対応）
-            echo "report<<EOF" >> $GITHUB_OUTPUT
+            # ユニークな区切り文字を使用
+            echo "report<<ENDOF3AIANALYSIS" >> $GITHUB_OUTPUT
             cat issue_analysis.txt >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            echo "ENDOF3AIANALYSIS" >> $GITHUB_OUTPUT
           else
             echo "report=分析結果ファイルが見つかりません" >> $GITHUB_OUTPUT
           fi
