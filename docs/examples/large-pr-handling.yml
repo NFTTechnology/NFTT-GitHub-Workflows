@@ -1,0 +1,268 @@
+# 大規模PR対応の実装例
+# 大きな差分を効率的に処理するための設定
+
+name: Large PR Handler
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  # PRサイズ分析
+  analyze-pr-size:
+    runs-on: ubuntu-latest
+    outputs:
+      size_category: ${{ steps.categorize.outputs.category }}
+      file_count: ${{ steps.analyze.outputs.file_count }}
+      should_split: ${{ steps.analyze.outputs.should_split }}
+      chunks: ${{ steps.analyze.outputs.chunks }}
+    steps:
+      - name: PR情報取得
+        id: analyze
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # PR統計情報取得
+          pr_data=$(gh pr view ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --json additions,deletions,files)
+          
+          additions=$(echo "$pr_data" | jq -r '.additions')
+          deletions=$(echo "$pr_data" | jq -r '.deletions')
+          file_count=$(echo "$pr_data" | jq -r '.files | length')
+          total_changes=$((additions + deletions))
+          
+          echo "file_count=$file_count" >> $GITHUB_OUTPUT
+          echo "total_changes=$total_changes" >> $GITHUB_OUTPUT
+          
+          # 分割が必要かどうか判定
+          if [ $total_changes -gt 5000 ] || [ $file_count -gt 50 ]; then
+            echo "should_split=true" >> $GITHUB_OUTPUT
+            
+            # チャンク数を計算（最大10チャンク）
+            chunk_size=20  # ファイル数ベース
+            chunks=$((($file_count + $chunk_size - 1) / $chunk_size))
+            chunks=$((chunks > 10 ? 10 : chunks))
+            echo "chunks=$chunks" >> $GITHUB_OUTPUT
+          else
+            echo "should_split=false" >> $GITHUB_OUTPUT
+            echo "chunks=1" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: サイズカテゴリ判定
+        id: categorize
+        run: |
+          total_changes=${{ steps.analyze.outputs.total_changes }}
+          
+          if [ $total_changes -lt 100 ]; then
+            echo "category=small" >> $GITHUB_OUTPUT
+          elif [ $total_changes -lt 1000 ]; then
+            echo "category=medium" >> $GITHUB_OUTPUT
+          elif [ $total_changes -lt 5000 ]; then
+            echo "category=large" >> $GITHUB_OUTPUT
+          else
+            echo "category=extra-large" >> $GITHUB_OUTPUT
+          fi
+
+  # 通常のレビュー（中規模以下）
+  standard-review:
+    needs: analyze-pr-size
+    if: needs.analyze-pr-size.outputs.should_split == 'false'
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review.yml@main
+    with:
+      pr_number: ${{ github.event.pull_request.number }}
+      repository: ${{ github.repository }}
+      review_type: ${{ needs.analyze-pr-size.outputs.size_category == 'small' && 'quick' || 'balanced' }}
+    secrets: inherit
+
+  # 分割レビュー用のファイルリスト生成
+  prepare-chunks:
+    needs: analyze-pr-size
+    if: needs.analyze-pr-size.outputs.should_split == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.create-matrix.outputs.matrix }}
+    steps:
+      - name: ファイルリスト取得と分割
+        id: create-matrix
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # 変更ファイルリストを取得
+          gh pr view ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --json files \
+            --jq '.files[].path' > all_files.txt
+          
+          # ファイルタイプで優先度付け
+          # ソースコードを優先
+          grep -E '\.(js|ts|jsx|tsx|py|java|go|cs|cpp|c|h|rb|php)$' all_files.txt > source_files.txt || true
+          grep -vE '\.(js|ts|jsx|tsx|py|java|go|cs|cpp|c|h|rb|php)$' all_files.txt > other_files.txt || true
+          
+          # 優先度順にマージ
+          cat source_files.txt other_files.txt > sorted_files.txt
+          
+          # チャンクに分割
+          chunks=${{ needs.analyze-pr-size.outputs.chunks }}
+          chunk_size=$(( ($(wc -l < sorted_files.txt) + chunks - 1) / chunks ))
+          
+          # マトリックス用のJSONを生成
+          matrix='{"chunk":['
+          for i in $(seq 0 $((chunks - 1))); do
+            start=$((i * chunk_size + 1))
+            end=$(((i + 1) * chunk_size))
+            
+            # チャンクのファイルリストを作成
+            sed -n "${start},${end}p" sorted_files.txt > "chunk_${i}.txt"
+            
+            # base64エンコード（改行を保持）
+            files_b64=$(base64 -w 0 < "chunk_${i}.txt")
+            
+            if [ $i -gt 0 ]; then
+              matrix+=','
+            fi
+            matrix+="{\"id\":$i,\"files\":\"$files_b64\"}"
+          done
+          matrix+=']}'
+          
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  # 分割レビュー実行
+  chunked-review:
+    needs: [analyze-pr-size, prepare-chunks]
+    if: needs.analyze-pr-size.outputs.should_split == 'true'
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare-chunks.outputs.matrix) }}
+      max-parallel: 3  # API制限を考慮
+    runs-on: ubuntu-latest
+    steps:
+      - name: チャンクファイル復元
+        id: restore
+        run: |
+          # base64デコード
+          echo "${{ matrix.chunk.files }}" | base64 -d > chunk_files.txt
+          echo "file_list=$(cat chunk_files.txt | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_OUTPUT
+      
+      - name: チャンク差分取得
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # チャンク内のファイルの差分のみ取得
+          > chunk_diff.txt
+          while IFS= read -r file; do
+            echo "diff --git a/$file b/$file" >> chunk_diff.txt
+            gh pr diff ${{ github.event.pull_request.number }} \
+              --repo ${{ github.repository }} -- "$file" >> chunk_diff.txt || true
+          done < chunk_files.txt
+      
+      - name: チャンクレビュー実行
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # 軽量なレビューを実行（チャンクごと）
+          python << 'EOF'
+          import os
+          import anthropic
+          
+          client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+          
+          with open('chunk_diff.txt', 'r') as f:
+              diff_content = f.read()
+          
+          # 簡潔なレビューを要求
+          prompt = f"""
+          以下の差分をレビューしてください（チャンク {${{ matrix.chunk.id + 1 }}}/{${{ needs.analyze-pr-size.outputs.chunks }}}）:
+          
+          {diff_content[:8000]}  # 制限
+          
+          重要な問題のみを最大3つ挙げてください：
+          1. セキュリティ問題
+          2. 重大なバグ
+          3. パフォーマンス問題
+          """
+          
+          response = client.messages.create(
+              model="claude-3-5-haiku-20241022",
+              max_tokens=500,
+              messages=[{"role": "user", "content": prompt}]
+          )
+          
+          with open('review_chunk_${{ matrix.chunk.id }}.md', 'w') as f:
+              f.write(f"## チャンク {${{ matrix.chunk.id + 1 }}}/{${{ needs.analyze-pr-size.outputs.chunks }}}\n\n")
+              f.write(response.content[0].text)
+          EOF
+      
+      - name: レビュー結果アップロード
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-chunk-${{ matrix.chunk.id }}
+          path: review_chunk_${{ matrix.chunk.id }}.md
+
+  # レビュー結果統合
+  merge-reviews:
+    needs: [analyze-pr-size, chunked-review]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: レビュー結果ダウンロード
+        uses: actions/download-artifact@v4
+        with:
+          pattern: review-chunk-*
+          merge-multiple: true
+      
+      - name: 統合レポート作成
+        run: |
+          cat > final_review.md << 'EOF'
+          # 🔍 大規模PR AI レビュー結果
+          
+          **PR規模**: ${{ needs.analyze-pr-size.outputs.size_category }}
+          **ファイル数**: ${{ needs.analyze-pr-size.outputs.file_count }}
+          **チャンク数**: ${{ needs.analyze-pr-size.outputs.chunks }}
+          
+          ---
+          
+          EOF
+          
+          # 各チャンクのレビューを統合
+          for i in $(seq 0 $((${{ needs.analyze-pr-size.outputs.chunks }} - 1))); do
+            if [ -f "review_chunk_${i}.md" ]; then
+              cat "review_chunk_${i}.md" >> final_review.md
+              echo -e "\n---\n" >> final_review.md
+            fi
+          done
+          
+          # サマリー追加
+          cat >> final_review.md << 'EOF'
+          
+          ## 📊 レビューサマリー
+          
+          この大規模PRは複数のチャンクに分割してレビューされました。
+          各チャンクの重要な指摘事項は上記の通りです。
+          
+          ### 推奨事項
+          1. 大きなPRは可能な限り小さく分割することを推奨します
+          2. 機能ごとに個別のPRを作成してください
+          3. レビューの効率と品質が向上します
+          
+          <sub>🤖 Large PR Handler by [NFTT-GitHub-Workflows](https://github.com/NFTTechnology/NFTT-GitHub-Workflows)</sub>
+          EOF
+      
+      - name: レビュー投稿
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const review = fs.readFileSync('final_review.md', 'utf8');
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.pull_request.number }},
+              body: review
+            });
+
+# カスタマイズポイント：
+# 1. チャンクサイズを調整（chunk_size変数）
+# 2. 並列実行数を調整（max-parallel）
+# 3. ファイルタイプの優先順位を変更
+# 4. レビューの詳細度を調整

@@ -197,17 +197,39 @@ jobs:
               else:
                   other_files.append(file_info)
           
-          # セキュリティパターンのチェック
+          # セキュリティパターンのチェック（ドキュメントファイルは除外）
           security_issues = []
+          doc_extensions = {'.md', '.txt', '.rst', '.adoc', '.tex'}
+          
+          # ソースコードファイルのみをセキュリティスキャン対象にする
+          source_and_config_files = source_files + config_files
+          
           for pattern_name, pattern_info in security_patterns.items():
-              matches = re.findall(pattern_info['pattern'], diff_content, re.IGNORECASE | re.MULTILINE)
-              if matches:
+              total_matches = 0
+              file_matches = []
+              
+              for file_info in source_and_config_files:
+                  # ドキュメントファイルはスキップ
+                  if any(file_info['path'].endswith(ext) for ext in doc_extensions):
+                      continue
+                  
+                  # ファイル固有の差分を抽出
+                  file_pattern = rf"diff --git.*{re.escape(file_info['path'])}.*?(?=diff --git|$)"
+                  file_diff = re.search(file_pattern, diff_content, re.DOTALL)
+                  
+                  if file_diff:
+                      matches = re.findall(pattern_info['pattern'], file_diff.group(0), re.IGNORECASE | re.MULTILINE)
+                      if matches:
+                          total_matches += len(matches)
+                          file_matches.extend(matches[:3])  # 最初の3つのサンプルを保存
+              
+              if total_matches > 0:
                   security_issues.append({
                       'type': pattern_name,
                       'severity': pattern_info['severity'],
                       'message': pattern_info['message'],
-                      'count': len(matches),
-                      'samples': matches[:3]
+                      'count': total_matches,
+                      'samples': file_matches[:3]
                   })
           
           # セキュリティ問題を深刻度でソート

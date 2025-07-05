@@ -1,0 +1,193 @@
+# コスト最適化された実装例
+# 無料枠内で最大限の効果を得るための設定
+
+name: Cost-Optimized AI Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+
+# 月間の実行回数を制限
+concurrency:
+  group: ai-review-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # 月間予算設定（ドル）
+  MONTHLY_BUDGET: 10
+  # 現在の使用量を追跡
+  USAGE_FILE: .github/ai-usage.json
+
+jobs:
+  # コスト確認
+  check-budget:
+    runs-on: ubuntu-latest
+    outputs:
+      can_proceed: ${{ steps.check.outputs.proceed }}
+      remaining_budget: ${{ steps.check.outputs.remaining }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: 使用量確認
+        id: check
+        run: |
+          # 使用量ファイルの初期化
+          if [ ! -f "$USAGE_FILE" ]; then
+            echo '{"month":"'$(date +%Y-%m)'","cost":0,"count":0}' > $USAGE_FILE
+          fi
+          
+          # 現在の使用量を確認
+          current_month=$(date +%Y-%m)
+          usage=$(cat $USAGE_FILE)
+          usage_month=$(echo $usage | jq -r '.month')
+          
+          # 月が変わったらリセット
+          if [ "$usage_month" != "$current_month" ]; then
+            echo '{"month":"'$current_month'","cost":0,"count":0}' > $USAGE_FILE
+            usage=$(cat $USAGE_FILE)
+          fi
+          
+          current_cost=$(echo $usage | jq -r '.cost')
+          remaining=$(echo "$MONTHLY_BUDGET - $current_cost" | bc)
+          
+          # 予算確認
+          if (( $(echo "$remaining > 0" | bc -l) )); then
+            echo "proceed=true" >> $GITHUB_OUTPUT
+            echo "remaining=$remaining" >> $GITHUB_OUTPUT
+          else
+            echo "proceed=false" >> $GITHUB_OUTPUT
+            echo "remaining=0" >> $GITHUB_OUTPUT
+          fi
+
+  # Issue分析（コスト最適化版）
+  analyze-issue:
+    needs: check-budget
+    if: |
+      needs.check-budget.outputs.can_proceed == 'true' &&
+      github.event_name == 'issue_comment' &&
+      contains(github.event.comment.body, '/analyze-budget')
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer-v5.yml@main
+    with:
+      issue_number: ${{ github.event.issue.number }}
+      issue_title: ${{ github.event.issue.title }}
+      issue_body: ${{ github.event.issue.body }}
+      repository: ${{ github.repository }}
+      # v5のコスト最適化機能を最大限活用
+      enable_cost_optimization: true
+      models: |
+        {
+          "claude": "claude-3-5-haiku-20241022",
+          "openai": "gpt-4o-mini",
+          "gemini": "gemini-1.5-flash"
+        }
+    secrets: inherit
+
+  # PRレビュー（軽量版）
+  review-pr:
+    needs: check-budget
+    if: |
+      needs.check-budget.outputs.can_proceed == 'true' &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.additions < 500
+    runs-on: ubuntu-latest
+    steps:
+      - name: 簡易セキュリティチェック
+        run: |
+          # 基本的なセキュリティパターンチェック（AIを使わない）
+          echo "🔍 セキュリティパターンチェック中..."
+          
+          # 危険なパターンを検出
+          patterns=(
+            "password.*=.*['\"]"
+            "api[_-]?key.*=.*['\"]"
+            "token.*=.*['\"]"
+            "secret.*=.*['\"]"
+          )
+          
+          found_issues=false
+          for pattern in "${patterns[@]}"; do
+            if gh pr diff ${{ github.event.pull_request.number }} | grep -iE "$pattern"; then
+              found_issues=true
+              echo "⚠️ 潜在的なセキュリティ問題: $pattern"
+            fi
+          done
+          
+          if [ "$found_issues" = true ]; then
+            echo "trigger_full_review=true" >> $GITHUB_ENV
+          fi
+      
+      - name: AI レビュー（必要時のみ）
+        if: env.trigger_full_review == 'true'
+        uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review.yml@main
+        with:
+          pr_number: ${{ github.event.pull_request.number }}
+          repository: ${{ github.repository }}
+          review_type: 'quick'  # 最速・最安値
+          max_diff_lines: 1000  # 差分を制限
+          # 最も安価なモデルを使用
+          models: |
+            {
+              "claude": "claude-3-5-haiku-20241022",
+              "openai": "gpt-4o-mini"
+            }
+          # セキュリティのみにフォーカス
+          focus_areas: "security"
+        secrets: inherit
+
+  # 使用量更新
+  update-usage:
+    needs: [analyze-issue, review-pr]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 使用量記録
+        run: |
+          # 推定コスト（実際のトークン数に基づいて調整が必要）
+          estimated_cost=0.02  # Issue分析またはPRレビュー1回あたり
+          
+          # 使用量を更新
+          current=$(cat $USAGE_FILE)
+          new_cost=$(echo "$current" | jq ".cost + $estimated_cost")
+          new_count=$(echo "$current" | jq ".count + 1")
+          
+          echo "$current" | jq ".cost = $new_cost | .count = $new_count" > $USAGE_FILE
+          
+          # コミット
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add $USAGE_FILE
+          git commit -m "chore: AI使用量を更新 [skip ci]" || true
+          git push || true
+
+  # 予算アラート
+  budget-alert:
+    needs: check-budget
+    if: needs.check-budget.outputs.remaining_budget < 2
+    runs-on: ubuntu-latest
+    steps:
+      - name: 予算警告Issue作成
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const remaining = ${{ needs.check-budget.outputs.remaining_budget }};
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ AI予算残高が少なくなっています',
+              body: `現在の残高: $${remaining}\n\n月間予算の90%以上を使用しています。`,
+              labels: ['budget-alert', 'ai-workflows']
+            });
+
+# コスト削減のポイント：
+# 1. 実行条件を厳密に設定（小さなPRのみ、特定のコマンドのみ）
+# 2. 最も安価なモデルを使用（Haiku、GPT-4o-mini）
+# 3. 差分サイズを制限
+# 4. セキュリティパターンは正規表現で事前チェック
+# 5. 月間予算を設定して自動停止

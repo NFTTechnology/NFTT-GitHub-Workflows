@@ -4,6 +4,12 @@
 
 3AI Issue Analyzerは、Claude、Gemini、OpenAIの3つのAIを使用してGitHub Issueを包括的に分析するツールです。
 
+### 🌟 主な特徴
+- **3AI並列分析**: 異なる視点からの包括的なコードレビュー
+- **コスト最適化**: Claude 3.5 Sonnet採用でGPT-4比95%コスト削減
+- **柔軟なトリガー**: コメント、ラベル、スケジュール実行に対応
+- **カスタマイズ可能**: 目的に応じたバージョン選択
+
 ## 📊 バージョン情報
 
 現在、3AI Issue Analyzerには5つのバージョンがあります：
@@ -45,7 +51,7 @@ on:
 jobs:
   analyze:
     if: contains(github.event.comment.body, '/analyze')
-    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer-v3.yml@main
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
     with:
       issue_number: ${{ github.event.issue.number }}
       issue_title: ${{ github.event.issue.title }}
@@ -58,6 +64,21 @@ jobs:
 ### 3. 使用方法
 
 Issueで `/analyze` とコメントすると3AI分析が開始されます。
+
+## 💰 コスト情報
+
+### AIプロバイダー料金（2025年最新）
+
+| AI | 入力トークン | 出力トークン | コスト効率 |
+|-----|------------|------------|----------|
+| Claude 3.5 Sonnet | $3/1M | $15/1M | ★★★★★ |
+| GPT-4 Turbo | $10/1M | $30/1M | ★★★ |
+| Gemini Pro | $1.25/1M | $10/1M | ★★★★ |
+
+詳細は各AIプロバイダーの公式ドキュメントを参照：
+- [Claude API料金](https://www.anthropic.com/api)
+- [OpenAI API料金](https://openai.com/pricing)
+- [Google AI料金](https://ai.google.dev/pricing)
 
 ## 📝 トリガー別実装例
 
@@ -136,14 +157,20 @@ max-parallel: 2  # 並列実行数（デフォルト: 1）
 1. **API制限**
    - 各AIプロバイダーのレート制限に注意
    - 大量のIssueを一度に処理しない
+   - v5実装では自動リトライ機能あり
 
 2. **コスト**
    - API使用量に応じた課金が発生
    - 必要に応じてmax_tokensを調整
+   - [コスト最適化ガイド](COST_OPTIMIZATION.md)を参照
 
 3. **プライバシー**
    - センシティブな情報を含むIssueでは使用を控える
    - 各AIプロバイダーのデータ取り扱いポリシーを確認
+
+4. **GitHub Actions制限**
+   - パブリックリポジトリ：無料
+   - プライベートリポジトリ：月間2,000分（Freeプラン）
 
 ## 🐛 トラブルシューティング
 
@@ -156,10 +183,17 @@ max-parallel: 2  # 並列実行数（デフォルト: 1）
 2. **「0秒で失敗」する場合**
    - ワークフローファイルの構文エラーをチェック
    - YAMLのインデントが正しいか確認
+   - ブランチ名が`@main`であることを確認
 
 3. **分析結果が投稿されない**
    - GitHub Actionsの実行ログを確認
    - APIキーが有効か確認
+   - Issueの権限設定を確認
+
+4. **「429 Rate Limit」エラー**
+   - APIレート制限に到達
+   - 時間をおいて再実行
+   - v5使用で自動リトライ
 
 ### デバッグ方法
 
@@ -169,9 +203,30 @@ max-parallel: 2  # 並列実行数（デフォルト: 1）
 
 ## 📚 関連リソース
 
+### GitHub Actions
 - [GitHub Actions ドキュメント](https://docs.github.com/actions)
+- [再利用可能ワークフロー](https://docs.github.com/en/actions/using-workflows/reusing-workflows)
+- [ワークフローのベストプラクティス](https://earthly.dev/blog/github-actions-reusable-workflows/)
+
+### AI APIドキュメント
+- [Claude API](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)
+- [OpenAI API](https://platform.openai.com/docs/introduction)
+- [Google Gemini API](https://ai.google.dev/tutorials/rest_quickstart)
+
+### コミュニティ
 - [test-workflow リポジトリ](https://github.com/NFTTechnology/test-workflow) - 実装例
+- [GitHub Discussions](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/discussions) - Q&A、アイデア共有
 
 ## 💬 サポート
 
 問題や質問がある場合は、[Issues](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues)で報告してください。
+
+## 🎯 次のステップ
+
+1. [バージョン比較ガイド](VERSION_COMPARISON.md)で最適なバージョンを選択
+2. [使用パターン集](USAGE_PATTERNS.md)で具体的な実装例を確認
+3. [コスト最適化ガイド](COST_OPTIMIZATION.md)で予算に合わせた設定を行う
+
+---
+
+**最終更新**: 2025年7月
