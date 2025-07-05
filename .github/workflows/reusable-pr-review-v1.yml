@@ -1,0 +1,234 @@
+name: Reusable PR Review v1 (Simple)
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        description: 'PR番号'
+        required: true
+        type: string
+      repository:
+        description: 'リポジトリ名 (owner/repo)'
+        required: true
+        type: string
+      review_type:
+        description: 'レビュータイプ (quick/balanced/detailed)'
+        required: false
+        type: string
+        default: 'balanced'
+      max_diff_lines:
+        description: '差分の最大行数'
+        required: false
+        type: number
+        default: 5000
+      models:
+        description: '使用するAIモデル設定（JSON）'
+        required: false
+        type: string
+        default: '{"claude": "claude-3-5-sonnet-20241022", "openai": "gpt-4o-mini"}'
+
+jobs:
+  pr-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install anthropic openai PyGithub requests
+
+      - name: Get PR information
+        id: pr-info
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fetching PR #${{ inputs.pr_number }} from ${{ inputs.repository }}"
+          
+          # PR情報を取得
+          gh pr view ${{ inputs.pr_number }} \
+            --repo ${{ inputs.repository }} \
+            --json title,body,author,createdAt,additions,deletions,files,labels \
+            > pr_data.json
+          
+          # 差分を取得（最大行数まで）
+          gh pr diff ${{ inputs.pr_number }} \
+            --repo ${{ inputs.repository }} \
+            | head -n ${{ inputs.max_diff_lines }} > pr_diff.txt || true
+          
+          # デバッグ情報
+          echo "PR data:"
+          jq -r '.title' pr_data.json
+          echo "Diff size: $(wc -l < pr_diff.txt) lines"
+
+      - name: Run AI review
+        id: ai-review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MODELS_CONFIG: ${{ inputs.models }}
+          REVIEW_TYPE: ${{ inputs.review_type }}
+        run: |
+          cat > pr_review.py << 'PYTHON_SCRIPT'
+          import os
+          import json
+          import anthropic
+          import openai
+          
+          # 設定読み込み
+          models = json.loads(os.getenv('MODELS_CONFIG'))
+          review_type = os.getenv('REVIEW_TYPE', 'balanced')
+          
+          # PR情報読み込み
+          with open('pr_data.json', 'r') as f:
+              pr_data = json.load(f)
+          
+          # 差分読み込み
+          try:
+              with open('pr_diff.txt', 'r') as f:
+                  diff_content = f.read()
+          except:
+              diff_content = "差分の取得に失敗しました"
+          
+          # レビューの深さ設定
+          review_config = {
+              'quick': {
+                  'focus': 'critical issues only',
+                  'max_tokens': 500,
+                  'checklist': ['セキュリティ問題', '明らかなバグ']
+              },
+              'balanced': {
+                  'focus': 'important issues and improvements',
+                  'max_tokens': 1000,
+                  'checklist': ['セキュリティ', 'バグ', 'パフォーマンス', 'コード品質']
+              },
+              'detailed': {
+                  'focus': 'comprehensive review',
+                  'max_tokens': 2000,
+                  'checklist': ['セキュリティ', 'バグ', 'パフォーマンス', 'コード品質', 
+                               'テスト', 'ドキュメント', 'ベストプラクティス']
+              }
+          }
+          
+          config = review_config[review_type]
+          
+          # PR情報の整理
+          pr_title = pr_data.get('title', 'No title')
+          pr_body = pr_data.get('body', 'No description')
+          pr_author = pr_data.get('author', {}).get('login', 'Unknown')
+          additions = pr_data.get('additions', 0)
+          deletions = pr_data.get('deletions', 0)
+          files = pr_data.get('files', [])
+          labels = [label['name'] for label in pr_data.get('labels', [])]
+          
+          # レビュープロンプト
+          prompt = f"""
+          以下のPRをレビューしてください。
+          レビュータイプ: {review_type} - {config['focus']}
+          
+          PR情報:
+          - タイトル: {pr_title}
+          - 作者: {pr_author}
+          - 変更: +{additions} -{deletions} ({len(files)} files)
+          - ラベル: {', '.join(labels) if labels else 'なし'}
+          
+          説明:
+          {pr_body[:1000]}
+          
+          変更内容:
+          {diff_content[:8000]}
+          
+          以下の観点でレビューしてください:
+          {chr(10).join(f'- {item}' for item in config['checklist'])}
+          
+          出力形式:
+          ## 📊 総合評価
+          [承認可能 / 条件付き承認 / 要修正] - 簡潔な理由
+          
+          ## 🚨 必須修正事項
+          （あれば箇条書きで、コード例付き）
+          
+          ## 💡 改善提案
+          （あれば箇条書きで、優先度付き）
+          
+          ## ✅ 良い点
+          （1-2個、モチベーション向上のため）
+          
+          簡潔で実用的なレビューを心がけてください。
+          """
+          
+          # AI実行（Claudeを優先）
+          try:
+              client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+              response = client.messages.create(
+                  model=models['claude'],
+                  max_tokens=config['max_tokens'],
+                  temperature=0.3,
+                  messages=[{"role": "user", "content": prompt}]
+              )
+              review_content = response.content[0].text
+          except Exception as e:
+              # フォールバック: OpenAI
+              try:
+                  client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+                  response = client.chat.completions.create(
+                      model=models['openai'],
+                      max_tokens=config['max_tokens'],
+                      temperature=0.3,
+                      messages=[{"role": "user", "content": prompt}]
+                  )
+                  review_content = response.choices[0].message.content
+              except Exception as e2:
+                  review_content = f"レビューエラー: {e}, {e2}"
+          
+          # レビュー結果の整形
+          review_report = f"""# 🤖 AI Code Review
+          
+          **PR:** #{pr_data.get('number', 'N/A')} {pr_title}
+          **レビュータイプ:** {review_type.title()}
+          
+          {review_content}
+          
+          ---
+          <sub>🤖 Reviewed by AI ({models['claude']} / {models['openai']}) | [Powered by NFTT-GitHub-Workflows](https://github.com/NFTTechnology/NFTT-GitHub-Workflows)</sub>
+          """
+          
+          # 結果を保存
+          with open('review_report.md', 'w', encoding='utf-8') as f:
+              f.write(review_report)
+          
+          print("Review completed successfully")
+          PYTHON_SCRIPT
+          
+          python pr_review.py
+
+      - name: Post review comment
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ -f "review_report.md" ]]; then
+            REPORT=$(cat review_report.md)
+            
+            # PRにコメントを投稿
+            gh pr comment ${{ inputs.pr_number }} \
+              --repo ${{ inputs.repository }} \
+              --body "$REPORT"
+            
+            echo "✅ Review posted successfully"
+          else
+            echo "❌ Review report not found"
+            exit 1
+          fi
+
+      - name: Add review labels
+        if: success() && contains(fromJSON('["balanced", "detailed"]'), inputs.review_type)
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          # レビュー済みラベルを追加
+          gh pr edit ${{ inputs.pr_number }} \
+            --repo ${{ inputs.repository }} \
+            --add-label "ai-reviewed" || true

@@ -1,0 +1,102 @@
+name: PR Review Dispatcher Template
+
+# これは各リポジトリで使用するテンプレートファイルです
+# .github/workflows/pr-auto-review.yml として保存してください
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  
+  # 手動実行も可能
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR番号（手動実行時）'
+        required: true
+        type: number
+      review_version:
+        description: '使用するレビューバージョン'
+        required: false
+        default: 'v1'
+        type: choice
+        options:
+          - v1  # シンプル版
+          - v2  # マルチロール版
+      review_type:
+        description: 'レビューの深さ'
+        required: false
+        default: 'balanced'
+        type: choice
+        options:
+          - quick
+          - balanced
+          - detailed
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  trigger-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine PR number
+        id: pr
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+            echo "version=${{ inputs.review_version }}" >> $GITHUB_OUTPUT
+            echo "type=${{ inputs.review_type }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            # 自動実行時のデフォルト設定
+            # ラベルに基づいてバージョンを決定
+            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'complex-pr') }}" == "true" ]]; then
+              echo "version=v2" >> $GITHUB_OUTPUT
+              echo "type=detailed" >> $GITHUB_OUTPUT
+            else
+              echo "version=v1" >> $GITHUB_OUTPUT
+              echo "type=balanced" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Post start message
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr_number = ${{ steps.pr.outputs.number }};
+            const version = '${{ steps.pr.outputs.version }}';
+            const type = '${{ steps.pr.outputs.type }}';
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr_number,
+              body: `🤖 AI Code Review を開始します...\n- Version: ${version}\n- Type: ${type}`
+            });
+
+  # v1レビュー（シンプル版）
+  review-v1:
+    needs: trigger-review
+    if: needs.trigger-review.outputs.version == 'v1' || needs.trigger-review.outputs.version == ''
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review-v1.yml@main
+    with:
+      pr_number: ${{ needs.trigger-review.outputs.number }}
+      repository: ${{ github.repository }}
+      review_type: ${{ needs.trigger-review.outputs.type || 'balanced' }}
+      max_diff_lines: 5000
+    secrets: inherit
+
+  # v2レビュー（マルチロール版）
+  review-v2:
+    needs: trigger-review
+    if: needs.trigger-review.outputs.version == 'v2'
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review-v2.yml@main
+    with:
+      pr_number: ${{ needs.trigger-review.outputs.number }}
+      repository: ${{ github.repository }}
+      review_type: ${{ needs.trigger-review.outputs.type || 'balanced' }}
+      max_diff_lines: 10000
+      enable_code_suggestions: true
+    secrets: inherit
