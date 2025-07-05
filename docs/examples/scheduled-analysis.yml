@@ -1,0 +1,56 @@
+name: Weekly Issue Analysis
+
+on:
+  schedule:
+    # 毎週月曜日の9時（JST）に実行
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+    inputs:
+      analyze_all_open:
+        description: 'すべてのオープンIssueを分析'
+        type: boolean
+        default: false
+
+jobs:
+  find-issues:
+    runs-on: ubuntu-latest
+    outputs:
+      issues: ${{ steps.get-issues.outputs.issues }}
+    steps:
+      - name: Get open issues
+        id: get-issues
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'needs-analysis',
+              per_page: 5 // 一度に処理する最大数
+            });
+            
+            const issueData = issues.data.map(issue => ({
+              number: issue.number,
+              title: issue.title,
+              body: issue.body || ''
+            }));
+            
+            core.setOutput('issues', JSON.stringify(issueData));
+            console.log(`Found ${issueData.length} issues to analyze`);
+  
+  analyze-issues:
+    needs: find-issues
+    if: needs.find-issues.outputs.issues != '[]'
+    strategy:
+      matrix:
+        issue: ${{ fromJson(needs.find-issues.outputs.issues) }}
+      max-parallel: 1 # API制限を考慮して順次実行
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer-v3.yml@main
+    with:
+      issue_number: ${{ matrix.issue.number }}
+      issue_title: ${{ matrix.issue.title }}
+      issue_body: ${{ matrix.issue.body }}
+      repository: ${{ github.repository }}
+    secrets: inherit

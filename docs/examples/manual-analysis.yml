@@ -1,0 +1,41 @@
+name: Manual Issue Analysis
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: '分析するIssue番号'
+        required: true
+        type: number
+
+jobs:
+  get-issue-details:
+    runs-on: ubuntu-latest
+    outputs:
+      issue_title: ${{ steps.get-issue.outputs.title }}
+      issue_body: ${{ steps.get-issue.outputs.body }}
+    steps:
+      - name: Get issue details
+        id: get-issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.inputs.issue_number }}
+            });
+            
+            core.setOutput('title', issue.data.title);
+            core.setOutput('body', issue.data.body || '');
+  
+  analyze:
+    needs: get-issue-details
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer-v3.yml@main
+    with:
+      issue_number: ${{ github.event.inputs.issue_number }}
+      issue_title: ${{ needs.get-issue-details.outputs.issue_title }}
+      issue_body: ${{ needs.get-issue-details.outputs.issue_body }}
+      repository: ${{ github.repository }}
+    secrets: inherit
