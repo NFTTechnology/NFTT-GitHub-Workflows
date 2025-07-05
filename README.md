@@ -2,7 +2,7 @@
 
 # 🌐 NFTT-GitHub-Workflows
 
-### Enterprise-Grade AI-Powered GitHub Actions Workflows
+### エンタープライズグレードのAI駆動型GitHub Actionsワークフロー
 
 [![GitHub release](https://img.shields.io/github/v/release/NFTTechnology/NFTT-GitHub-Workflows?style=for-the-badge)](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/releases)
 [![License](https://img.shields.io/github/license/NFTTechnology/NFTT-GitHub-Workflows?style=for-the-badge)](LICENSE)
@@ -13,119 +13,119 @@
 [![GPT-4](https://img.shields.io/badge/GPT--4-Turbo-74AA9C?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/)
 [![Gemini](https://img.shields.io/badge/Gemini-Pro-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
 
-**Transform your development workflow with the power of three leading AI models**
+**3つの最先端AIモデルの力で開発ワークフローを変革**
 
-[🚀 Get Started](#-quick-start) • [📖 Documentation](#-documentation) • [💬 Community](#-community--support)
+[🚀 クイックスタート](#-クイックスタート) • [📖 ドキュメント](#-ドキュメント) • [💬 コミュニティ](#-コミュニティとサポート) • [🌐 English](README_EN.md)
 
 </div>
 
 ---
 
-## ✨ Overview
+## ✨ 概要
 
-NFTT-GitHub-Workflows delivers enterprise-grade, reusable GitHub Actions workflows powered by a unique **Triple-AI Analysis System**. Leverage the combined intelligence of Claude 3.5 Sonnet, GPT-4 Turbo, and Gemini Pro to automate code reviews, issue analysis, and development workflows at scale.
+NFTT-GitHub-Workflowsは、**トリプルAI分析システム**を搭載したエンタープライズグレードの再利用可能なGitHub Actionsワークフローを提供します。Claude 3.5 Sonnet、GPT-4 Turbo、Gemini Proの組み合わせにより、コードレビュー、Issue分析、開発ワークフローを大規模に自動化します。
 
 <table>
 <tr>
 <td width="33%" align="center">
 
-### 🎯 Precision
-Multi-perspective analysis from three industry-leading AI models
+### 🎯 精度
+3つの業界最先端AIモデルによる多角的分析
 
 </td>
 <td width="33%" align="center">
 
-### ⚡ Performance
-20x faster than manual reviews with parallel AI processing
+### ⚡ パフォーマンス
+並列AI処理により手動レビューの20倍高速
 
 </td>
 <td width="33%" align="center">
 
-### 💎 Value
-95% cost reduction compared to traditional GPT-4 implementations
+### 💎 価値
+従来のGPT-4実装と比較して95%のコスト削減
 
 </td>
 </tr>
 </table>
 
-## 🏆 Why Choose NFTT-GitHub-Workflows?
+## 🏆 NFTT-GitHub-Workflowsを選ぶ理由
 
-### 📊 Performance Metrics
+### 📊 パフォーマンス指標
 
 <div align="center">
 
-| Metric | Traditional Review | NFTT Workflows | Improvement |
-|--------|-------------------|----------------|-------------|
-| **Review Time** | 2-4 hours | 5-10 minutes | **95% faster** |
-| **Issue Analysis** | 30 minutes | 90 seconds | **20x faster** |
-| **Cost per Review** | $50-100 | $0.50-2.00 | **95% cheaper** |
-| **Coverage** | 60-70% | 95-99% | **40% better** |
+| 指標 | 従来のレビュー | NFTTワークフロー | 改善率 |
+|------|---------------|-----------------|---------|
+| **レビュー時間** | 2-4時間 | 5-10分 | **95%高速化** |
+| **Issue分析** | 30分 | 90秒 | **20倍高速** |
+| **レビューコスト** | $50-100 | $0.50-2.00 | **95%削減** |
+| **カバレッジ** | 60-70% | 95-99% | **40%向上** |
 
 </div>
 
-### 🔥 Key Features
+### 🔥 主な機能
 
 <table>
 <tr>
 <td width="50%">
 
-#### 🤖 Triple-AI Intelligence
-- **Claude 3.5 Sonnet**: Deep code understanding & security analysis
-- **GPT-4 Turbo**: Advanced reasoning & architectural insights
-- **Gemini Pro**: Performance optimization & best practices
+#### 🤖 トリプルAIインテリジェンス
+- **Claude 3.5 Sonnet**: 深いコード理解とセキュリティ分析
+- **GPT-4 Turbo**: 高度な推論とアーキテクチャ洞察
+- **Gemini Pro**: パフォーマンス最適化とベストプラクティス
 
 </td>
 <td width="50%">
 
-#### 🛡️ Enterprise Security
-- Secure API key management
-- Role-based access control
-- Audit trail compliance
-- Zero data retention policy
+#### 🛡️ エンタープライズセキュリティ
+- セキュアなAPIキー管理
+- ロールベースアクセス制御
+- 監査証跡の準拠
+- ゼロデータ保持ポリシー
 
 </td>
 </tr>
 <tr>
 <td width="50%">
 
-#### 📈 Scalability
-- Handle 1000+ issues simultaneously
-- Automatic load balancing
-- Smart caching system
-- Rate limit management
+#### 📈 スケーラビリティ
+- 1000以上のIssueを同時処理
+- 自動負荷分散
+- スマートキャッシングシステム
+- レート制限管理
 
 </td>
 <td width="50%">
 
-#### 🔧 Flexibility
-- 5 specialized workflow versions
-- Custom prompt engineering
-- Language-agnostic analysis
-- Extensible architecture
+#### 🔧 柔軟性
+- 5つの特化型ワークフローバージョン
+- カスタムプロンプトエンジニアリング
+- 言語非依存の分析
+- 拡張可能なアーキテクチャ
 
 </td>
 </tr>
 </table>
 
-## 🚀 Quick Start
+## 🚀 クイックスタート
 
-Get up and running in **under 5 minutes** with our streamlined setup process.
+**5分以内**で稼働開始できる効率的なセットアッププロセス
 
-### Prerequisites
+### 前提条件
 
-- GitHub repository with Actions enabled
-- API keys for AI services (we'll guide you through obtaining these)
-- Basic YAML knowledge (optional)
+- Actionsが有効なGitHubリポジトリ
+- AIサービスのAPIキー（取得方法をご案内します）
+- 基本的なYAMLの知識（オプション）
 
-### 🎬 Installation
+### 🎬 インストール
 
 <details>
-<summary><b>1️⃣ Create Workflow File</b> (click to expand)</summary>
+<summary><b>1️⃣ ワークフローファイルの作成</b>（クリックして展開）</summary>
 
-Create `.github/workflows/ai-analysis.yml` in your repository:
+リポジトリに `.github/workflows/ai-analysis.yml` を作成：
 
 ```yaml
-name: AI-Powered Analysis
+name: AI駆動分析
 on:
   issue_comment:
     types: [created]
@@ -136,6 +136,7 @@ jobs:
   analyze:
     if: contains(github.event.comment.body, '/analyze') || github.event_name == 'pull_request'
     uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    # 注意：これはデフォルトで最新版（v5）を使用します。特定バージョンには@v4や@v3を指定してください
     with:
       issue_number: ${{ github.event.issue.number || github.event.pull_request.number }}
       issue_title: ${{ github.event.issue.title || github.event.pull_request.title }}
@@ -147,41 +148,41 @@ jobs:
 </details>
 
 <details>
-<summary><b>2️⃣ Configure API Keys</b> (click to expand)</summary>
+<summary><b>2️⃣ APIキーの設定</b>（クリックして展開）</summary>
 
-Navigate to your repository's **Settings** → **Secrets and variables** → **Actions**
+リポジトリの **設定** → **シークレットと変数** → **Actions** に移動
 
-Add these secrets:
-- `ANTHROPIC_API_KEY` - [Get your key](https://console.anthropic.com/)
-- `OPENAI_API_KEY` - [Get your key](https://platform.openai.com/api-keys)
-- `GEMINI_API_KEY` - [Get your key](https://makersuite.google.com/app/apikey)
+以下のシークレットを追加：
+- `ANTHROPIC_API_KEY` - [キーを取得](https://console.anthropic.com/)
+- `OPENAI_API_KEY` - [キーを取得](https://platform.openai.com/api-keys)
+- `GEMINI_API_KEY` - [キーを取得](https://makersuite.google.com/app/apikey)
 
 </details>
 
 <details>
-<summary><b>3️⃣ Test Your Setup</b> (click to expand)</summary>
+<summary><b>3️⃣ セットアップのテスト</b>（クリックして展開）</summary>
 
-1. Create a new issue in your repository
-2. Comment `/analyze` on the issue
-3. Watch the magic happen! 🎉
+1. リポジトリに新しいIssueを作成
+2. Issueに `/analyze` とコメント
+3. 魔法が起こるのを見守る！ 🎉
 
 </details>
 
-## 🏗️ Architecture
+## 🏗️ アーキテクチャ
 
 <div align="center">
 
 ```mermaid
 graph LR
-    A[GitHub Event] -->|Trigger| B[NFTT Workflow]
-    B --> C{AI Orchestrator}
-    C -->|Parallel Processing| D[Claude 3.5]
-    C -->|Parallel Processing| E[GPT-4 Turbo]
-    C -->|Parallel Processing| F[Gemini Pro]
-    D --> G[Analysis Aggregator]
+    A[GitHubイベント] -->|トリガー| B[NFTTワークフロー]
+    B --> C{AIオーケストレーター}
+    C -->|並列処理| D[Claude 3.5]
+    C -->|並列処理| E[GPT-4 Turbo]
+    C -->|並列処理| F[Gemini Pro]
+    D --> G[分析集約]
     E --> G
     F --> G
-    G -->|Formatted Results| H[GitHub Comment/Review]
+    G -->|フォーマット済み結果| H[GitHub コメント/レビュー]
     
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style H fill:#9f9,stroke:#333,stroke-width:2px
@@ -190,71 +191,71 @@ graph LR
 
 </div>
 
-## 📋 Workflow Versions
+## 📋 ワークフローバージョン
 
-Choose the right version for your needs. **By default, the latest version (v5) is used when you specify `@main`.**
+あなたのニーズに合わせて適切なバージョンを選択してください。**`@main`を指定した場合、デフォルトで最新版（v5）が使用されます。**
 
 <div align="center">
 
-| Version | Optimized For | Response Time | Cost | Best Use Case |
-|---------|--------------|---------------|------|---------------|
-| **v5** ⭐ | Cost Efficiency | ~90 seconds | 💚 Low | Daily operations, small-medium projects (Default) |
-| **v4** | Deep Analysis | ~3 minutes | 🟡 Medium | Complex issues, historical context needed |
-| **v3** | Stability | ~2 minutes | 💚 Low | Production environments |
+| バージョン | 最適化対象 | 応答時間 | コスト | 最適な使用ケース |
+|-----------|-----------|---------|--------|-----------------|
+| **v5** ⭐ | コスト効率 | ~90秒 | 💚 低 | 日常運用、中小規模プロジェクト（デフォルト） |
+| **v4** | 深い分析 | ~3分 | 🟡 中 | 複雑なIssue、履歴コンテキストが必要 |
+| **v3** | 安定性 | ~2分 | 💚 低 | 本番環境 |
 
 </div>
 
-### Version Selection
+### バージョン選択
 
 ```yaml
-# Use latest version (v5) - Default when using @main
+# 最新版（v5）を使用 - @main使用時のデフォルト
 uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
 
-# Use specific version
+# 特定バージョンを使用
 uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@v4
 ```
 
-## 💰 Cost Calculator
+## 💰 コスト計算
 
 <details>
-<summary><b>Estimate your monthly costs</b> (click to expand)</summary>
+<summary><b>月額コストの見積もり</b>（クリックして展開）</summary>
 
-### Pricing Comparison (2025)
+### 料金比較（2025年）
 
-| AI Model | Input Cost | Output Cost | Speed | Quality |
-|----------|------------|-------------|-------|---------|
-| Claude 3.5 Sonnet | $3/1M tokens | $15/1M tokens | ⚡⚡⚡⚡⚡ | ⭐⭐⭐⭐⭐ |
-| GPT-4 Turbo | $10/1M tokens | $30/1M tokens | ⚡⚡⚡⚡ | ⭐⭐⭐⭐⭐ |
-| Gemini Pro | $1.25/1M tokens | $10/1M tokens | ⚡⚡⚡⚡ | ⭐⭐⭐⭐ |
+| AIモデル | 入力コスト | 出力コスト | 速度 | 品質 |
+|----------|-----------|-----------|------|------|
+| Claude 3.5 Sonnet | $3/100万トークン | $15/100万トークン | ⚡⚡⚡⚡⚡ | ⭐⭐⭐⭐⭐ |
+| GPT-4 Turbo | $10/100万トークン | $30/100万トークン | ⚡⚡⚡⚡ | ⭐⭐⭐⭐⭐ |
+| Gemini Pro | $1.25/100万トークン | $10/100万トークン | ⚡⚡⚡⚡ | ⭐⭐⭐⭐ |
 
-### Monthly Cost Estimates
+### 月額コスト見積もり
 
-| Usage Level | Issues/Month | Estimated Cost | Recommended Version |
-|-------------|--------------|----------------|---------------------|
-| **Starter** | 0-100 | $5-10 | v5 (Claude-focused) |
-| **Growth** | 100-500 | $20-50 | v5 with selective v4 |
-| **Scale** | 500-1000 | $50-100 | Custom configuration |
-| **Enterprise** | 1000+ | Contact us | Dedicated support |
+| 使用レベル | Issue/月 | 推定コスト | 推奨バージョン |
+|-----------|----------|-----------|---------------|
+| **スターター** | 0-100 | $5-10 | v5（Claude中心） |
+| **成長** | 100-500 | $20-50 | v5と選択的v4 |
+| **スケール** | 500-1000 | $50-100 | カスタム設定 |
+| **エンタープライズ** | 1000+ | お問い合わせ | 専用サポート |
 
 </details>
 
-## 🛠️ Advanced Configurations
+## 🛠️ 高度な設定
 
-### Custom AI Model Selection
+### カスタムAIモデル選択
 
 ```yaml
 with:
-  ai_models: "claude-only"  # Options: all, claude-only, gpt-only, gemini-only
-  max_tokens: 4000         # Customize response length
-  temperature: 0.7         # Control creativity (0.0-1.0)
+  ai_models: "claude-only"  # オプション: all, claude-only, gpt-only, gemini-only
+  max_tokens: 4000         # レスポンス長のカスタマイズ
+  temperature: 0.7         # 創造性の制御（0.0-1.0）
 ```
 
-### Scheduled Batch Analysis
+### スケジュールバッチ分析
 
 ```yaml
 on:
   schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+    - cron: '0 2 * * *'  # 毎日午前2時（UTC）
 jobs:
   batch-analyze:
     uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
@@ -264,18 +265,18 @@ jobs:
       max_issues: 50
 ```
 
-### Integration Examples
+### 統合例
 
 <details>
-<summary><b>Slack Notifications</b></summary>
+<summary><b>Slack通知</b></summary>
 
 ```yaml
-- name: Notify Slack
+- name: Slack通知
   if: always()
   uses: 8398a7/action-slack@v3
   with:
     status: ${{ job.status }}
-    text: 'AI Analysis Complete for Issue #${{ github.event.issue.number }}'
+    text: 'AI分析完了 Issue #${{ github.event.issue.number }}'
   env:
     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 ```
@@ -283,10 +284,10 @@ jobs:
 </details>
 
 <details>
-<summary><b>JIRA Integration</b></summary>
+<summary><b>JIRA統合</b></summary>
 
 ```yaml
-- name: Create JIRA Issue
+- name: JIRAイシュー作成
   uses: atlassian/gajira-create@master
   with:
     project: PROJ
@@ -297,81 +298,81 @@ jobs:
 
 </details>
 
-## 📖 Documentation
+## 📖 ドキュメント
 
-### Core Guides
-- 📘 [3AI Issue Analyzer Guide](docs/3AI_ANALYZER_GUIDE.md) - Complete setup and usage
-- 📗 [PR Review Guide](docs/pr-review.md) - Automated code review setup
-- 📙 [Usage Patterns](docs/USAGE_PATTERNS.md) - Real-world implementation examples
-- 📕 [Cost Optimization](docs/COST_OPTIMIZATION.md) - Minimize your API costs
+### コアガイド
+- 📘 [3AI Issue分析ガイド](docs/3AI_ANALYZER_GUIDE.md) - 完全なセットアップと使用方法
+- 📗 [PRレビューガイド](docs/pr-review.md) - 自動コードレビューのセットアップ
+- 📙 [使用パターン](docs/USAGE_PATTERNS.md) - 実装例
+- 📕 [コスト最適化](docs/COST_OPTIMIZATION.md) - APIコストの最小化
 
-### Technical References
-- 🔧 [Version Comparison](docs/VERSION_COMPARISON.md) - Detailed feature matrix
-- 🛠️ [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
-- 📊 [Monitoring Guide](docs/monitoring.md) - Track usage and performance
-- 🔒 [Security Policy](docs/SECURITY.md) - Security best practices
+### 技術リファレンス
+- 🔧 [バージョン比較](docs/VERSION_COMPARISON.md) - 詳細な機能マトリックス
+- 🛠️ [トラブルシューティング](docs/TROUBLESHOOTING.md) - 一般的な問題と解決策
+- 📊 [モニタリングガイド](docs/monitoring.md) - 使用状況とパフォーマンスの追跡
+- 🔒 [セキュリティポリシー](docs/SECURITY.md) - セキュリティベストプラクティス
 
-## 🌍 Real-World Impact
+## 🌍 実世界での影響
 
 <table>
 <tr>
 <td width="50%">
 
-### 📈 Success Metrics
-- **10,000+** automated reviews completed
-- **500+** hours saved monthly
-- **95%** issue resolution accuracy
-- **4.9/5** developer satisfaction
+### 📈 成功指標
+- **10,000以上**の自動レビュー完了
+- 月間**500時間以上**の時間節約
+- **95%**のIssue解決精度
+- **4.9/5**の開発者満足度
 
 </td>
 <td width="50%">
 
-### 🏢 Trusted By
-- Startups accelerating development
-- Enterprises ensuring code quality
-- Open source projects scaling reviews
-- Educational institutions teaching best practices
+### 🏢 信頼する組織
+- 開発を加速するスタートアップ
+- コード品質を保証するエンタープライズ
+- レビューをスケールするオープンソースプロジェクト
+- ベストプラクティスを教える教育機関
 
 </td>
 </tr>
 </table>
 
-## 🤝 Community & Support
+## 🤝 コミュニティとサポート
 
-### Get Involved
-- 🌟 [Star this repository](https://github.com/NFTTechnology/NFTT-GitHub-Workflows) to show support
-- 🐛 [Report issues](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues/new) or request features
-- 🔀 [Submit pull requests](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/pulls) to contribute
-- 💬 [Join discussions](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/discussions) with the community
+### 参加方法
+- 🌟 [このリポジトリにスター](https://github.com/NFTTechnology/NFTT-GitHub-Workflows)をつけてサポートを示す
+- 🐛 [Issue報告](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues/new)や機能リクエスト
+- 🔀 [プルリクエスト](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/pulls)で貢献
+- 💬 [ディスカッション](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/discussions)でコミュニティに参加
 
-### Resources
-- 📧 **Email**: support@nfttechnology.com
-- 📝 **Blog**: [Latest updates and tutorials](https://blog.nfttechnology.com)
-- 🎥 **YouTube**: [Video tutorials](https://youtube.com/@nfttechnology)
+### リソース
+- 📧 **メール**: goda @ nftt.co.jp
+- 📝 **ブログ**: [最新情報とチュートリアル](https://blog.nfttechnology.com)
+- 🎥 **YouTube**: [ビデオチュートリアル](https://youtube.com/@nfttechnology)
 - 🐦 **Twitter**: [@NFTTechnology](https://twitter.com/nfttechnology)
 
-## 📜 License
+## 📜 ライセンス
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+このプロジェクトはMITライセンスでライセンスされています - 詳細は[LICENSE](LICENSE)ファイルを参照してください。
 
-## 🙏 Acknowledgments
+## 🙏 謝辞
 
-Special thanks to:
-- The GitHub Actions team for the powerful platform
-- Anthropic, OpenAI, and Google for their incredible AI models
-- Our community contributors for continuous improvements
-- All users who provide valuable feedback
+特別な感謝を：
+- 強力なプラットフォームを提供するGitHub Actionsチーム
+- 素晴らしいAIモデルを提供するAnthropic、OpenAI、Google
+- 継続的な改善に貢献するコミュニティの貢献者
+- 貴重なフィードバックを提供するすべてのユーザー
 
 ---
 
 <div align="center">
 
-### 🌟 Star History
+### 🌟 スターヒストリー
 
 [![Star History Chart](https://api.star-history.com/svg?repos=NFTTechnology/NFTT-GitHub-Workflows&type=Date)](https://star-history.com/#NFTTechnology/NFTT-GitHub-Workflows&Date)
 
-**Made with ❤️ by the NFTTechnology Team**
+**NFTTechnologyチームが❤️を込めて作成**
 
-*Last Updated: July 2025*
+*最終更新: 2025年7月*
 
 </div>

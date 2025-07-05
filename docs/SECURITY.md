@@ -313,8 +313,8 @@ We recognize security researchers who have helped improve our security:
 
 <div align="center">
 
-**Remember: Security is everyone's responsibility**
+**覚えておいてください： セキュリティは全員の責任です**
 
-*Last Updated: July 2025*
+*最終更新: 2025年7月*
 
 </div>
