@@ -13,19 +13,16 @@ NFTT-GitHub-Workflows/
 ├── .github/
 │   ├── CODEOWNERS
 │   └── workflows/
+│       ├── 3ai-issue-analyzer.yml       # 再利用可能ワークフロー
 │       └── test-reusable-workflows.yml  # 自己テスト用
 ├── .gitignore
 ├── LICENSE                              # MIT License
 ├── README.md
-├── docs/
-│   ├── CONTRIBUTING.md
-│   ├── SECURITY.md
-│   └── workflows/
-│       └── 3ai-issue-analyzer.md
-└── workflows/
-    ├── 3ai-issue-analyzer.yml           # 最初の再利用可能ワークフロー
-    └── templates/
-        └── reusable-workflow-template.yml
+└── docs/
+    ├── CONTRIBUTING.md
+    ├── SECURITY.md
+    └── workflows/
+        └── 3ai-issue-analyzer.md
 ```
 
 ## 🚀 使用方法
