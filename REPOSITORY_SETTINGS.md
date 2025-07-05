@@ -44,10 +44,12 @@ https://nfttechnology.github.io/NFTT-GitHub-Workflows/
 
 ## 4. Pull Requests設定（Settings → General → Pull Requests）
 
-- ✅ **Allow merge commits**: ON
-- ✅ **Allow squash merging**: ON（推奨）
-- ✅ **Allow rebase merging**: OFF
+- ❌ **Allow merge commits**: OFF（履歴をシンプルに保つ）
+- ✅ **Allow squash merging**: ON（推奨 - 複数コミットを1つにまとめる）
+- ❌ **Allow rebase merging**: OFF（複雑になるので無効）
 - ✅ **Automatically delete head branches**: ON（マージ後にブランチ自動削除）
+
+**注意**: マージは**リポジトリオーナー**（あなた）と**Collaborator**のみ可能です。
 
 ## 5. 推奨される追加設定
 
