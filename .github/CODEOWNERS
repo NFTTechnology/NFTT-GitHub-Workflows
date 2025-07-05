@@ -1,0 +1,16 @@
+# CODEOWNERS - NFTT-GitHub-Workflows
+# このファイルは、リポジトリ内のファイルに対するコード所有者を定義します
+
+# デフォルトのコード所有者
+* @goalgoda
+
+# ワークフローファイル
+workflows/ @goalgoda
+.github/workflows/ @goalgoda
+
+# ドキュメント
+docs/ @goalgoda
+
+# 設定ファイル
+.github/CODEOWNERS @goalgoda
+LICENSE @goalgoda

@@ -1,0 +1,301 @@
+name: 3AI Issue Analyzer - Reusable
+
+on:
+  workflow_call:
+    inputs:
+      issue_number:
+        description: 'Issue number to analyze'
+        required: true
+        type: number
+      issue_title:
+        description: 'Issue title'
+        required: true
+        type: string
+      issue_body:
+        description: 'Issue body'
+        required: true
+        type: string
+      comment_id:
+        description: 'Comment ID that triggered the analysis'
+        required: false
+        type: number
+      repository:
+        description: 'Repository name (owner/repo)'
+        required: true
+        type: string
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
+      OPENAI_API_KEY:
+        required: true
+      GEMINI_API_KEY:
+        required: true
+      GITHUB_TOKEN:
+        required: false
+        description: 'GitHub token for API calls (defaults to github.token)'
+    outputs:
+      analysis_report:
+        description: '3AI analysis report'
+        value: ${{ jobs.analyze.outputs.report }}
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    outputs:
+      report: ${{ steps.save-analysis.outputs.report }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repository }}
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: pip install anthropic openai google-generativeai python-dotenv
+      
+      - name: Add Reaction
+        if: inputs.comment_id
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN || github.token }}
+          script: |
+            const [owner, repo] = '${{ inputs.repository }}'.split('/');
+            await github.rest.reactions.createForIssueComment({
+              owner: owner,
+              repo: repo,
+              comment_id: ${{ inputs.comment_id }},
+              content: 'rocket'
+            });
+      
+      - name: Run 3AI Issue Analysis
+        id: run-analysis
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ISSUE_TITLE: ${{ inputs.issue_title }}
+          ISSUE_BODY: ${{ inputs.issue_body }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+        run: |
+          cat > analyze_issue.py << 'EOF'
+          import os
+          import anthropic
+          import openai
+          import google.generativeai as genai
+          import json
+          import sys
+          
+          # Issue情報を取得
+          issue_title = os.getenv('ISSUE_TITLE', '')
+          issue_body = os.getenv('ISSUE_BODY', '')
+          issue_number = os.getenv('ISSUE_NUMBER', '')
+          
+          print(f"🤖 3AI Issue Analysis for #{issue_number}")
+          print(f"Title: {issue_title}")
+          print("=" * 50)
+          
+          # Phase 1: Claude - 要件分析と実装計画
+          try:
+              claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+              
+              planning_prompt = f"""
+              以下のIssueを分析して、実装計画を立ててください：
+              
+              Issue #{issue_number}: {issue_title}
+              
+              内容：
+              {issue_body}
+              
+              以下の観点で分析してください：
+              1. 要件の明確化（不明点があれば指摘）
+              2. 技術的な実装アプローチ
+              3. 必要なファイルの変更
+              4. 実装の優先順位
+              5. 潜在的なリスク
+              
+              日本語で具体的に回答してください。
+              """
+              
+              claude_response = claude_client.messages.create(
+                  model="claude-3-5-sonnet-20241022",
+                  max_tokens=1500,
+                  messages=[{"role": "user", "content": planning_prompt}]
+              )
+              
+              claude_analysis = claude_response.content[0].text
+              print("📋 Claude - 要件分析完了")
+              
+          except Exception as e:
+              print(f"Claude error: {e}")
+              claude_analysis = "要件分析でエラーが発生しました。"
+          
+          # Phase 2: Gemini - 技術的実現可能性とベストプラクティス
+          try:
+              genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+              gemini_model = genai.GenerativeModel('gemini-2.0-flash-exp')
+              
+              gemini_prompt = f"""
+              Issue #{issue_number}: {issue_title}
+              
+              内容：
+              {issue_body}
+              
+              以下の技術的観点から分析してください：
+              1. 実装パターンの推奨
+              2. パフォーマンスへの考慮事項
+              3. セキュリティ上の注意点
+              4. テスト戦略
+              5. 類似実装の参考例
+              
+              実践的なアドバイスを日本語で提供してください。
+              """
+              
+              gemini_response = gemini_model.generate_content(gemini_prompt)
+              gemini_analysis = gemini_response.text
+              print("🔍 Gemini - 技術分析完了")
+              
+          except Exception as e:
+              print(f"Gemini error: {e}")
+              gemini_analysis = "技術分析でエラーが発生しました。"
+          
+          # Phase 3: OpenAI - UXとドキュメント戦略
+          try:
+              openai.api_key = os.getenv("OPENAI_API_KEY")
+              client = openai.OpenAI()
+              
+              ux_prompt = f"""
+              Issue #{issue_number}: {issue_title}
+              
+              内容：
+              {issue_body}
+              
+              以下の観点から分析してください：
+              1. ユーザー体験への影響
+              2. UIの改善提案
+              3. ドキュメントの必要性
+              4. ユーザーへの影響範囲
+              5. 移行計画（必要な場合）
+              
+              開発者とユーザーの両方の視点から、分かりやすい日本語で回答してください。
+              """
+              
+              openai_response = client.chat.completions.create(
+                  model="gpt-4",
+                  messages=[{"role": "user", "content": ux_prompt}],
+                  max_tokens=1000
+              )
+              
+              ux_analysis = openai_response.choices[0].message.content
+              print("💡 OpenAI - UX分析完了")
+              
+          except Exception as e:
+              print(f"OpenAI error: {e}")
+              ux_analysis = "UX分析でエラーが発生しました。"
+          
+          # Phase 4: Claude - 統合レポート作成
+          try:
+              final_prompt = f"""
+              Issue #{issue_number}: {issue_title} について、3AIの分析結果を統合してください。
+              
+              Claudeの要件分析：
+              {claude_analysis}
+              
+              Geminiの技術分析：
+              {gemini_analysis}
+              
+              OpenAIのUX分析：
+              {ux_analysis}
+              
+              これらを統合して、以下の形式で実装提案を作成してください：
+              
+              ## 📋 要件サマリー
+              （要件の理解と明確化）
+              
+              ## 🛠 実装計画
+              （具体的な実装ステップ）
+              
+              ## ⚠️ 注意事項
+              （セキュリティ、パフォーマンス、その他の考慮事項）
+              
+              ## 📊 影響範囲
+              （変更の影響を受ける部分）
+              
+              ## ✅ テスト計画
+              （必要なテストの概要）
+              
+              ## 💡 追加提案
+              （改善案や代替案）
+              
+              開発者が実装を開始できる具体的な内容にしてください。
+              """
+              
+              final_response = claude_client.messages.create(
+                  model="claude-3-5-sonnet-20241022",
+                  max_tokens=2000,
+                  messages=[{"role": "user", "content": final_prompt}]
+              )
+              
+              final_report = final_response.content[0].text
+              
+              # レポートを保存
+              with open('issue_analysis.txt', 'w', encoding='utf-8') as f:
+                  f.write(f"# 🤖 3AI Issue Analysis Report\n\n")
+                  f.write(f"**Issue #{issue_number}: {issue_title}**\n\n")
+                  f.write(final_report)
+                  f.write("\n\n---\n### 🤝 3AI協調分析\n\n")
+                  f.write("- 📋 **Claude**: 要件分析・実装計画・統合レポート\n")
+                  f.write("- 🔍 **Gemini**: 技術分析・ベストプラクティス\n")
+                  f.write("- 💡 **OpenAI**: UX分析・ドキュメント戦略\n\n")
+                  f.write("*Powered by [NFTT-GitHub-Workflows](https://github.com/NFTTechnology/NFTT-GitHub-Workflows)*")
+              
+              print("\n✅ 3AI分析完了")
+              
+          except Exception as e:
+              print(f"Final integration error: {e}")
+              with open('issue_analysis.txt', 'w', encoding='utf-8') as f:
+                  f.write(f"## ⚠️ 分析エラー\n\n3AI分析の実行中にエラーが発生しました。\n\nエラー: {str(e)}")
+          EOF
+          
+          python analyze_issue.py
+      
+      - name: Save Analysis Output
+        id: save-analysis
+        run: |
+          if [ -f issue_analysis.txt ]; then
+            # GitHub Outputに保存（マルチライン対応）
+            echo "report<<EOF" >> $GITHUB_OUTPUT
+            cat issue_analysis.txt >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "report=分析結果ファイルが見つかりません" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Post Analysis Result
+        if: inputs.issue_number
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN || github.token }}
+          script: |
+            const fs = require('fs');
+            let analysis = '';
+            
+            try {
+              analysis = fs.readFileSync('issue_analysis.txt', 'utf8');
+            } catch (e) {
+              analysis = '## ⚠️ 分析結果の読み込みエラー\n\n分析結果ファイルが見つかりません。';
+            }
+            
+            if (analysis.trim()) {
+              const [owner, repo] = '${{ inputs.repository }}'.split('/');
+              await github.rest.issues.createComment({
+                owner: owner,
+                repo: repo,
+                issue_number: ${{ inputs.issue_number }},
+                body: analysis
+              });
+            }

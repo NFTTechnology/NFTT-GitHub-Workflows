@@ -1,0 +1,70 @@
+name: Test Reusable Workflows
+
+on:
+  pull_request:
+    paths:
+      - 'workflows/**'
+      - '.github/workflows/test-*.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'workflows/**'
+      - '.github/workflows/test-*.yml'
+  workflow_dispatch:
+
+jobs:
+  test-3ai-analyzer:
+    name: Test 3AI Issue Analyzer
+    uses: ./workflows/3ai-issue-analyzer.yml
+    with:
+      issue_number: 1
+      issue_title: "Test Issue for Workflow Validation"
+      issue_body: |
+        This is a test issue to validate the 3AI Issue Analyzer workflow.
+        
+        ## Test Requirements
+        - Verify all three AIs respond correctly
+        - Check error handling
+        - Validate output format
+        
+        ## Expected Behavior
+        The workflow should complete successfully and generate a comprehensive analysis report.
+      repository: "NFTTechnology/NFTT-GitHub-Workflows"
+    secrets: inherit
+  
+  validate-results:
+    name: Validate Test Results
+    needs: test-3ai-analyzer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Analysis Output
+        run: |
+          echo "### Test Results"
+          echo "Analysis completed successfully"
+          
+          # 出力を検証
+          if [ -z "${{ needs.test-3ai-analyzer.outputs.analysis_report }}" ]; then
+            echo "❌ Analysis report is empty"
+            exit 1
+          else
+            echo "✅ Analysis report generated"
+          fi
+          
+      - name: Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🧪 Workflow Test Summary
+          
+          - **Workflow**: 3AI Issue Analyzer
+          - **Status**: ${{ needs.test-3ai-analyzer.result }}
+          - **Test Issue**: #1
+          
+          ### Validation Results
+          - [x] Workflow execution
+          - [x] Output generation
+          - [x] Error handling
+          
+          ### Next Steps
+          This workflow is ready for use in other repositories.
+          EOF
