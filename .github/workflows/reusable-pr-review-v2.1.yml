@@ -1,0 +1,507 @@
+name: Reusable PR Review v2.1 (Enhanced Multi-Role)
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        description: 'PR番号'
+        required: true
+        type: string
+      repository:
+        description: 'リポジトリ名 (owner/repo)'
+        required: true
+        type: string
+      review_type:
+        description: 'レビュータイプ (quick/balanced/detailed)'
+        required: false
+        type: string
+        default: 'balanced'
+      max_diff_lines:
+        description: '差分の最大行数'
+        required: false
+        type: number
+        default: 10000
+      models:
+        description: '使用するAIモデル設定（JSON）'
+        required: false
+        type: string
+        default: '{"claude": "claude-3-5-sonnet-20241022", "openai": "gpt-4o-mini"}'
+      enable_code_suggestions:
+        description: 'コード提案を含めるか'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  enhanced-multi-role-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install anthropic openai PyGithub requests
+
+      - name: Get PR context with analysis
+        id: pr-context
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "📥 Fetching PR #${{ inputs.pr_number }} from ${{ inputs.repository }}"
+          
+          # PR情報を取得
+          gh pr view ${{ inputs.pr_number }} \
+            --repo ${{ inputs.repository }} \
+            --json number,title,body,author,createdAt,additions,deletions,files,labels,baseRefName,headRefName \
+            > pr_data.json
+          
+          # 差分を取得
+          gh pr diff ${{ inputs.pr_number }} \
+            --repo ${{ inputs.repository }} \
+            | head -n ${{ inputs.max_diff_lines }} > pr_diff.txt || true
+          
+          # 変更ファイルリスト
+          jq -r '.files[].path' pr_data.json > changed_files.txt || true
+          
+          # ファイルタイプ分析
+          echo "📊 File type analysis:"
+          SOURCE_COUNT=$(grep -E '\.(js|ts|py|java|go|rb|php|cs|cpp|c)$' changed_files.txt | wc -l || echo 0)
+          CONFIG_COUNT=$(grep -E '\.(yml|yaml|json|xml|ini)$' changed_files.txt | wc -l || echo 0)
+          DOC_COUNT=$(grep -E '\.(md|txt|rst)$' changed_files.txt | wc -l || echo 0)
+          
+          echo "- Source files: $SOURCE_COUNT"
+          echo "- Config files: $CONFIG_COUNT"
+          echo "- Doc files: $DOC_COUNT"
+
+      - name: Run enhanced multi-role AI review
+        id: ai-review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MODELS_CONFIG: ${{ inputs.models }}
+          REVIEW_TYPE: ${{ inputs.review_type }}
+          ENABLE_SUGGESTIONS: ${{ inputs.enable_code_suggestions }}
+        run: |
+          cat > enhanced_multi_role_review.py << 'PYTHON_SCRIPT'
+          import os
+          import json
+          import re
+          import anthropic
+          import openai
+          from datetime import datetime
+          
+          # 設定
+          models = json.loads(os.getenv('MODELS_CONFIG'))
+          review_type = os.getenv('REVIEW_TYPE', 'balanced')
+          enable_suggestions = os.getenv('ENABLE_SUGGESTIONS', 'true').lower() == 'true'
+          
+          # データ読み込み
+          with open('pr_data.json', 'r') as f:
+              pr_data = json.load(f)
+          
+          try:
+              with open('pr_diff.txt', 'r') as f:
+                  diff_content = f.read()
+          except:
+              diff_content = "差分の取得に失敗しました"
+          
+          try:
+              with open('changed_files.txt', 'r') as f:
+                  changed_files = [line.strip() for line in f if line.strip()]
+          except:
+              changed_files = []
+          
+          # セキュリティパターンの定義（強化版）
+          security_patterns = {
+              'password_plain': {
+                  'pattern': r'(?i)(password|passwd|pwd)\s*[:=]\s*["\']?[^"\'\s\{\}]+["\']?(?!\s*\.|->)',
+                  'severity': 'critical',
+                  'message': 'パスワードの平文保存'
+              },
+              'sql_injection': {
+                  'pattern': r'(?i)(SELECT|INSERT|UPDATE|DELETE|DROP).*["\']?\s*\+\s*[^"\']+["\']?|f["\'].*{.*}.*(?:WHERE|VALUES)',
+                  'severity': 'critical',
+                  'message': 'SQLインジェクションの可能性'
+              },
+              'hardcoded_secret': {
+                  'pattern': r'(?i)(api[_-]?key|secret|token|password|passwd)\s*[:=]\s*["\'][^"\']{10,}["\']',
+                  'severity': 'high',
+                  'message': 'ハードコードされた認証情報'
+              },
+              'unsafe_eval': {
+                  'pattern': r'(?i)(eval|exec)\s*\([^)]*\)|new\s+Function\s*\(',
+                  'severity': 'high',
+                  'message': '安全でない動的コード実行'
+              },
+              'weak_crypto': {
+                  'pattern': r'(?i)(MD5|SHA1|DES|RC4)|Math\.random\(\)',
+                  'severity': 'medium',
+                  'message': '弱い暗号化アルゴリズム'
+              },
+              'sensitive_log': {
+                  'pattern': r'(?i)console\.(log|error|warn).*(?:password|token|secret|key|card)',
+                  'severity': 'medium',
+                  'message': '機密情報のログ出力'
+              },
+              'missing_auth': {
+                  'pattern': r'@(app\.)?route\s*\([^)]+\)(?!\s*\n\s*@(auth|login)_required)',
+                  'severity': 'medium',
+                  'message': '認証チェックなし'
+              }
+          }
+          
+          # PR情報
+          pr_number = pr_data.get('number', 'N/A')
+          pr_title = pr_data.get('title', 'No title')
+          pr_body = pr_data.get('body', 'No description')
+          pr_author = pr_data.get('author', {}).get('login', 'Unknown')
+          additions = pr_data.get('additions', 0)
+          deletions = pr_data.get('deletions', 0)
+          base_branch = pr_data.get('baseRefName', 'unknown')
+          head_branch = pr_data.get('headRefName', 'unknown')
+          
+          # ファイルタイプ分析
+          file_priorities = {
+              '.js': 'high', '.ts': 'high', '.jsx': 'high', '.tsx': 'high',
+              '.py': 'high', '.java': 'high', '.go': 'high', '.rb': 'high',
+              '.php': 'high', '.cs': 'high', '.cpp': 'high', '.c': 'high',
+              '.yml': 'medium', '.yaml': 'medium', '.json': 'medium',
+              '.xml': 'medium', '.ini': 'medium', '.env': 'high',
+              '.md': 'low', '.txt': 'low', '.rst': 'low'
+          }
+          
+          source_files = []
+          config_files = []
+          other_files = []
+          
+          for file in pr_data.get('files', []):
+              path = file.get('path', '')
+              ext = os.path.splitext(path)[1]
+              priority = file_priorities.get(ext, 'low')
+              
+              file_info = {
+                  'path': path,
+                  'additions': file.get('additions', 0),
+                  'deletions': file.get('deletions', 0),
+                  'priority': priority
+              }
+              
+              if priority == 'high':
+                  source_files.append(file_info)
+              elif priority == 'medium':
+                  config_files.append(file_info)
+              else:
+                  other_files.append(file_info)
+          
+          # セキュリティパターンのチェック
+          security_issues = []
+          for pattern_name, pattern_info in security_patterns.items():
+              matches = re.findall(pattern_info['pattern'], diff_content, re.IGNORECASE | re.MULTILINE)
+              if matches:
+                  security_issues.append({
+                      'type': pattern_name,
+                      'severity': pattern_info['severity'],
+                      'message': pattern_info['message'],
+                      'count': len(matches),
+                      'samples': matches[:3]
+                  })
+          
+          # セキュリティ問題を深刻度でソート
+          security_issues.sort(key=lambda x: {'critical': 0, 'high': 1, 'medium': 2}.get(x['severity'], 3))
+          
+          # レビュー設定
+          review_depth = {
+              'quick': {'roles': 2, 'max_items': 3, 'tokens': 400},
+              'balanced': {'roles': 4, 'max_items': 4, 'tokens': 600},
+              'detailed': {'roles': 4, 'max_items': 6, 'tokens': 1000}
+          }[review_type]
+          
+          # ソースコード中心の差分抽出
+          source_diff = ""
+          if source_files:
+              for file in source_files[:10]:  # 最大10ファイル
+                  file_pattern = rf"diff --git.*{re.escape(file['path'])}.*?(?=diff --git|$)"
+                  file_diff = re.search(file_pattern, diff_content, re.DOTALL)
+                  if file_diff:
+                      source_diff += file_diff.group(0) + "\n\n"
+          
+          # レビューロール定義（強化版）
+          all_roles = [
+              {
+                  'name': 'Security Engineer',
+                  'emoji': '🔒',
+                  'model': 'claude',
+                  'focus': 'セキュリティ脆弱性、認証認可、データ保護、暗号化、インジェクション攻撃',
+                  'priority': 'critical',
+                  'patterns': ['password_plain', 'sql_injection', 'hardcoded_secret', 'unsafe_eval']
+              },
+              {
+                  'name': 'QA Engineer',
+                  'emoji': '🧪',
+                  'model': 'openai',
+                  'focus': 'エラーハンドリング、境界値、テストカバレッジ、回帰リスク、バグ',
+                  'priority': 'high',
+                  'patterns': ['missing_auth', 'sensitive_log']
+              },
+              {
+                  'name': 'Senior Architect',
+                  'emoji': '🏗️',
+                  'model': 'claude',
+                  'focus': 'コード品質、設計パターン、パフォーマンス、保守性、技術的負債',
+                  'priority': 'medium',
+                  'patterns': ['weak_crypto']
+              },
+              {
+                  'name': 'Product Manager',
+                  'emoji': '📱',
+                  'model': 'openai',
+                  'focus': 'ユーザー影響、要件適合性、使いやすさ、ビジネス価値、移行計画',
+                  'priority': 'low',
+                  'patterns': []
+              }
+          ]
+          
+          # 使用するロールを選択
+          roles = all_roles[:review_depth['roles']]
+          
+          # セキュリティ問題の情報を整理
+          security_summary = ""
+          if security_issues:
+              security_summary = "\\n## 🚨 自動検出されたセキュリティ問題\\n"
+              for issue in security_issues[:5]:  # 最大5件
+                  security_summary += f"- **{issue['message']}** ({issue['severity']}): {issue['count']}件検出\\n"
+          
+          # コンテキスト作成
+          context = f"""
+          PR #{pr_number}: {pr_title}
+          Author: @{pr_author}
+          Branch: {head_branch} → {base_branch}
+          Changes: +{additions} -{deletions} in {len(changed_files)} files
+          
+          {security_summary}
+          
+          Description:
+          {pr_body[:1500]}
+          
+          Changed files:
+          {chr(10).join(f'- {f["path"]} (+{f["additions"]} -{f["deletions"]})' for f in source_files[:10])}
+          {'... and ' + str(len(source_files) - 10) + ' more source files' if len(source_files) > 10 else ''}
+          
+          Source code diff:
+          {source_diff[:8000]}
+          """
+          
+          # 各ロールでレビュー
+          reviews = []
+          
+          for role in roles:
+              # ロール専用のセキュリティ問題
+              role_issues = [issue for issue in security_issues if issue['type'] in role['patterns']]
+              
+              prompt = f"""
+              あなたは{role['name']}として、以下のPRを厳密にレビューしてください。
+              観点: {role['focus']}
+              
+              {context}
+              
+              {"以下のセキュリティ問題が検出されています：" if role_issues else ""}
+              {chr(10).join(f"- {issue['message']}: {issue['count']}件" for issue in role_issues)}
+              
+              {role['priority']}優先度の問題を最大{review_depth['max_items']}個挙げてください。
+              必ず以下を含めてください：
+              1. 具体的な行番号またはコード引用
+              2. 問題の影響と深刻度
+              {'3. 修正例のコード' if enable_suggestions else '3. 修正方針'}
+              
+              形式:
+              {'🚨' if role['priority'] == 'critical' else '⚠️' if role['priority'] == 'high' else 'ℹ️'} [問題のタイトル]
+              - 該当箇所: `ファイル名:行番号` または具体的なコード
+              - 影響: [具体的な影響]
+              {'- 修正例:' + chr(10) + '```language' + chr(10) + '// 修正コード' + chr(10) + '```' if enable_suggestions else '- 修正方針: [方針]'}
+              """
+              
+              try:
+                  if role['model'] == 'claude':
+                      client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+                      response = client.messages.create(
+                          model=models['claude'],
+                          max_tokens=review_depth['tokens'],
+                          temperature=0.3,
+                          messages=[{"role": "user", "content": prompt}]
+                      )
+                      review_text = response.content[0].text
+                  else:
+                      client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+                      response = client.chat.completions.create(
+                          model=models['openai'],
+                          max_tokens=review_depth['tokens'],
+                          temperature=0.3,
+                          messages=[{"role": "user", "content": prompt}]
+                      )
+                      review_text = response.choices[0].message.content
+                  
+                  reviews.append({
+                      'role': role['name'],
+                      'emoji': role['emoji'],
+                      'priority': role['priority'],
+                      'content': review_text.strip()
+                  })
+              except Exception as e:
+                  print(f"Error in {role['name']} review: {e}")
+                  reviews.append({
+                      'role': role['name'],
+                      'emoji': role['emoji'],
+                      'priority': role['priority'],
+                      'content': f"レビューエラー: {str(e)[:100]}"
+                  })
+          
+          # 総合評価の作成
+          summary_prompt = f"""
+          以下の{len(reviews)}人のエンジニアからのレビューと、自動検出された{len(security_issues)}件のセキュリティ問題を統合して、最終評価を作成してください：
+          
+          自動検出:
+          {chr(10).join(f"- {issue['message']} ({issue['severity']}): {issue['count']}件" for issue in security_issues[:5])}
+          
+          レビュー内容:
+          {chr(10).join(f"{r['emoji']} {r['role']}: {r['content'][:300]}..." for r in reviews)}
+          
+          以下の形式で簡潔にまとめてください：
+          
+          ## 判定
+          [✅ 承認可能 / ⚠️ 条件付き承認 / 🚫 要修正]
+          
+          ## 必須対応 (ブロッカー)
+          最重要項目のみ、最大3個（自動検出とレビューを統合）
+          
+          ## 推奨対応
+          改善提案、最大3個
+          
+          ## 良い点
+          1-2個、簡潔に
+          """
+          
+          # 総合評価生成
+          try:
+              client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+              summary_response = client.messages.create(
+                  model=models['claude'],
+                  max_tokens=800,
+                  temperature=0.2,
+                  messages=[{"role": "user", "content": summary_prompt}]
+              )
+              summary = summary_response.content[0].text.strip()
+          except:
+              summary = "総合評価の生成に失敗しました"
+          
+          # 最終レポート作成
+          report = f"""# 🤖 AI Multi-Role Code Review v2.1
+          
+          **PR:** #{pr_number} {pr_title}
+          **Review Type:** {review_type.title()} ({len(roles)} roles)
+          **Security Issues Detected:** {len(security_issues)}
+          **Timestamp:** {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}
+          
+          {summary}
+          
+          ---
+          
+          ## 🔍 自動セキュリティスキャン結果
+          
+          """
+          
+          if security_issues:
+              for issue in security_issues[:5]:
+                  report += f"### {issue['message']} ({issue['severity'].upper()})\n"
+                  report += f"- 検出数: {issue['count']}件\n"
+                  if issue['samples'] and enable_suggestions:
+                      report += f"- サンプル: `{issue['samples'][0][:50]}...`\n"
+                  report += "\n"
+          else:
+              report += "セキュリティパターンの自動検出では問題は見つかりませんでした。\n\n"
+          
+          report += "---\n\n## 👥 エキスパートレビュー\n\n"
+          
+          # 各ロールのレビューを追加
+          for review in reviews:
+              if review['content'] and "レビューエラー" not in review['content']:
+                  report += f"### {review['emoji']} {review['role']}\n\n"
+                  report += review['content'] + "\n\n"
+          
+          report += f"""---
+          
+          <details>
+          <summary>📊 Review Statistics</summary>
+          
+          - Files analyzed: {len(source_files)} source, {len(config_files)} config, {len(other_files)} other
+          - Security patterns checked: {len(security_patterns)}
+          - Issues found: {len(security_issues)}
+          - Lines of diff: {len(diff_content.splitlines())}
+          - Review depth: {review_type}
+          
+          </details>
+          
+          <sub>🤖 Enhanced multi-role review v2.1 by [NFTT-GitHub-Workflows](https://github.com/NFTTechnology/NFTT-GitHub-Workflows) | 💡 [Feedback](https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues)</sub>
+          """
+          
+          # レポート保存
+          with open('review_report.md', 'w', encoding='utf-8') as f:
+              f.write(report)
+          
+          # 判定結果を出力（GitHub Actions用）
+          if '✅ 承認可能' in summary:
+              print("::set-output name=verdict::approved")
+          elif '⚠️ 条件付き承認' in summary:
+              print("::set-output name=verdict::conditional")
+          else:
+              print("::set-output name=verdict::changes_requested")
+          
+          print(f"Enhanced multi-role review completed. Security issues: {len(security_issues)}")
+          PYTHON_SCRIPT
+          
+          python enhanced_multi_role_review.py
+
+      - name: Post review comment
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ -f "review_report.md" ]]; then
+            REPORT=$(cat review_report.md)
+            
+            # PRにコメントを投稿
+            gh pr comment ${{ inputs.pr_number }} \
+              --repo ${{ inputs.repository }} \
+              --body "$REPORT"
+            
+            echo "✅ Enhanced multi-role review posted successfully"
+          else
+            echo "❌ Review report not found"
+            exit 1
+          fi
+
+      - name: Add review labels and reactions
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ inputs.pr_number }}"
+          REPO="${{ inputs.repository }}"
+          
+          # レビュー済みラベルを追加
+          gh pr edit $PR_NUMBER --repo $REPO --add-label "ai-reviewed" || true
+          
+          # セキュリティ問題が検出された場合
+          if grep -q "Security Issues Detected: [1-9]" review_report.md; then
+            gh pr edit $PR_NUMBER --repo $REPO --add-label "security-review-needed" || true
+          fi
+          
+          # 判定に基づいてラベルを追加
+          VERDICT="${{ steps.ai-review.outputs.verdict }}"
+          if [[ "$VERDICT" == "approved" ]]; then
+            gh pr edit $PR_NUMBER --repo $REPO --add-label "ready-to-merge" || true
+          elif [[ "$VERDICT" == "changes_requested" ]]; then
+            gh pr edit $PR_NUMBER --repo $REPO --add-label "needs-work" || true
+          fi
