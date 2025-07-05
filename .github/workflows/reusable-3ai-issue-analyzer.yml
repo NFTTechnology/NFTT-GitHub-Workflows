@@ -1,4 +1,4 @@
-name: 3AI Issue Analyzer - Reusable
+name: 3AI Issue Analyzer (Default)
 
 on:
   workflow_call:
@@ -15,14 +15,24 @@ on:
         description: 'Issue body'
         required: true
         type: string
-      comment_id:
-        description: 'Comment ID that triggered the analysis'
-        required: false
-        type: number
       repository:
         description: 'Repository name (owner/repo)'
         required: true
         type: string
+      comment_id:
+        description: 'Comment ID that triggered the analysis'
+        required: false
+        type: number
+      include_comments:
+        description: 'Include comment history in analysis'
+        required: false
+        type: boolean
+        default: true
+      max_comments:
+        description: 'Maximum number of recent comments to include'
+        required: false
+        type: number
+        default: 30
     secrets:
       ANTHROPIC_API_KEY:
         required: true
@@ -39,13 +49,36 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     outputs:
-      report: ${{ steps.save-analysis.outputs.report }}
+      report: ${{ steps.post-result.outputs.report }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Get comment history
+        id: get-comments
+        if: inputs.include_comments
+        uses: actions/github-script@v7
         with:
-          repository: ${{ inputs.repository }}
+          github-token: ${{ github.token }}
+          script: |
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ inputs.issue_number }},
+              per_page: ${{ inputs.max_comments }}
+            });
+            
+            // 最新のコメントから取得
+            const commentHistory = comments.data.reverse().map(comment => ({
+              author: comment.user.login,
+              created_at: comment.created_at,
+              body: comment.body
+            }));
+            
+            // コメント履歴をJSON形式で保存
+            core.setOutput('comments_json', JSON.stringify(commentHistory));
+            console.log(`Found ${commentHistory.length} comments`);
       
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -53,160 +86,208 @@ jobs:
           python-version: '3.11'
       
       - name: Install dependencies
-        run: pip install anthropic openai google-generativeai python-dotenv
+        run: |
+          pip install --upgrade pip
+          pip install anthropic openai google-generativeai
       
-      - name: Add Reaction
+      - name: React to comment
         if: inputs.comment_id
         uses: actions/github-script@v7
         with:
           github-token: ${{ github.token }}
           script: |
-            const [owner, repo] = '${{ inputs.repository }}'.split('/');
             await github.rest.reactions.createForIssueComment({
-              owner: owner,
-              repo: repo,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
               comment_id: ${{ inputs.comment_id }},
               content: 'rocket'
             });
       
       - name: Run 3AI Issue Analysis
-        id: run-analysis
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          ISSUE_TITLE: ${{ inputs.issue_title }}
-          ISSUE_BODY: ${{ inputs.issue_body }}
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          COMMENTS_JSON: ${{ steps.get-comments.outputs.comments_json }}
         run: |
-          cat > analyze_issue.py << 'EOF'
+          cat > analyze_issue.py << 'PYTHON_SCRIPT'
           import os
+          import json
           import anthropic
           import openai
           import google.generativeai as genai
-          import json
-          import sys
+          from datetime import datetime
           
-          # Issue情報を取得
-          issue_title = os.getenv('ISSUE_TITLE', '')
-          issue_body = os.getenv('ISSUE_BODY', '')
-          issue_number = os.getenv('ISSUE_NUMBER', '')
+          # Issue情報
+          issue_number = "${{ inputs.issue_number }}"
+          issue_title = """${{ inputs.issue_title }}"""
+          issue_body = """${{ inputs.issue_body }}"""
           
-          print(f"🤖 3AI Issue Analysis for #{issue_number}")
-          print(f"Title: {issue_title}")
+          print(f"🔍 3AI分析開始: Issue #{issue_number}")
           print("=" * 50)
           
-          # Phase 1: Claude - 要件分析と実装計画
+          # コメント履歴を取得
+          comments_json = os.getenv("COMMENTS_JSON", "[]")
+          comments = json.loads(comments_json) if comments_json else []
+          
+          # Phase 0: コメント要約（安価なモデルで実施）
+          summary_context = ""
+          if comments:
+              print(f"📝 {len(comments)}件のコメントを要約中...")
+              
+              # Claude Haikuで要約（安価）
+              try:
+                  claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+                  
+                  # コメント履歴を整形
+                  comments_text = ""
+                  for comment in comments:
+                      comments_text += f"@{comment['author']} ({comment['created_at']}):\n{comment['body']}\n\n---\n\n"
+                  
+                  summary_prompt = f"""
+                  以下のIssueのコメント履歴を要約してください。重要なポイント、決定事項、技術的な議論を中心にまとめてください：
+                  
+                  # Issue: {issue_title}
+                  
+                  ## コメント履歴
+                  {comments_text}
+                  
+                  以下の形式で要約してください：
+                  - 主要な議論ポイント
+                  - 合意された事項
+                  - 未解決の課題
+                  - 技術的な提案や懸念事項
+                  """
+                  
+                  # Claude Haiku（安価）を使用
+                  summary_response = claude_client.messages.create(
+                      model="claude-3-haiku-20240307",
+                      max_tokens=1000,
+                      messages=[{"role": "user", "content": summary_prompt}]
+                  )
+                  summary_context = f"\n\n## 💬 議論の要約\n{summary_response.content[0].text}"
+                  print("✅ コメント要約完了（Claude Haiku使用）")
+                  
+              except Exception as e:
+                  print(f"要約エラー: {e}")
+                  # エラー時は生のコメントを一部含める
+                  recent_comments = "\n\n## 💬 最新のコメント（要約失敗）\n"
+                  for comment in comments[:5]:  # 最新5件のみ
+                      recent_comments += f"@{comment['author']}: {comment['body'][:200]}...\n\n"
+                  summary_context = recent_comments
+          
+          # 分析用のコンテキストを準備
+          analysis_context = f"""
+          # Issue #{issue_number}: {issue_title}
+          
+          ## 📝 Issue本文
+          {issue_body}
+          {summary_context}
+          """
+          
           try:
+              # Phase 1: Claude Sonnet - 概要と実装提案（高性能モデル）
               claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
               
-              planning_prompt = f"""
-              以下のIssueを分析して、実装計画を立ててください：
+              claude_prompt = f"""
+              以下のIssueを分析してください：
               
-              Issue #{issue_number}: {issue_title}
+              {analysis_context}
               
-              内容：
-              {issue_body}
+              以下の観点から分析してください：
+              1. 問題の本質的な理解（要約された議論も考慮）
+              2. 技術的な課題と解決アプローチ
+              3. 実装の具体的なステップ
+              4. 潜在的なリスクと対策
+              5. 成功基準の明確化
               
-              以下の観点で分析してください：
-              1. 要件の明確化（不明点があれば指摘）
-              2. 技術的な実装アプローチ
-              3. 必要なファイルの変更
-              4. 実装の優先順位
-              5. 潜在的なリスク
-              
-              日本語で具体的に回答してください。
+              開発者が実装を開始できる具体的な提案をしてください。
               """
               
+              print("🤖 Claude Sonnet分析中...")
               claude_response = claude_client.messages.create(
                   model="claude-3-5-sonnet-20241022",
-                  max_tokens=1500,
-                  messages=[{"role": "user", "content": planning_prompt}]
+                  max_tokens=2000,
+                  messages=[{"role": "user", "content": claude_prompt}]
               )
-              
               claude_analysis = claude_response.content[0].text
-              print("📋 Claude - 要件分析完了")
+              print("✅ Claude分析完了")
               
-          except Exception as e:
-              print(f"Claude error: {e}")
-              claude_analysis = "要件分析でエラーが発生しました。"
-          
-          # Phase 2: Gemini - 技術的実現可能性とベストプラクティス
-          try:
+              # Phase 2: Gemini Flash - 技術詳細（高速・安価）
               genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-              gemini_model = genai.GenerativeModel('gemini-2.0-flash-exp')
+              model = genai.GenerativeModel('gemini-1.5-flash')
               
               gemini_prompt = f"""
-              Issue #{issue_number}: {issue_title}
+              以下のIssueを技術的観点から分析してください：
               
-              内容：
-              {issue_body}
+              {analysis_context}
               
-              以下の技術的観点から分析してください：
-              1. 実装パターンの推奨
-              2. パフォーマンスへの考慮事項
-              3. セキュリティ上の注意点
+              Claudeの分析：
+              {claude_analysis}
+              
+              以下の技術的観点から詳細な分析を行ってください：
+              1. アーキテクチャの考慮事項
+              2. パフォーマンスへの影響
+              3. セキュリティの観点
               4. テスト戦略
-              5. 類似実装の参考例
-              
-              実践的なアドバイスを日本語で提供してください。
+              5. 実装の技術的な注意点
               """
               
-              gemini_response = gemini_model.generate_content(gemini_prompt)
+              print("🔮 Gemini Flash分析中...")
+              gemini_response = model.generate_content(gemini_prompt)
               gemini_analysis = gemini_response.text
-              print("🔍 Gemini - 技術分析完了")
+              print("✅ Gemini分析完了")
               
           except Exception as e:
               print(f"Gemini error: {e}")
               gemini_analysis = "技術分析でエラーが発生しました。"
           
-          # Phase 3: OpenAI - UXとドキュメント戦略
+          # Phase 3: GPT-3.5 - UXとドキュメント（安価）
           try:
               openai.api_key = os.getenv("OPENAI_API_KEY")
               client = openai.OpenAI()
               
               ux_prompt = f"""
-              Issue #{issue_number}: {issue_title}
+              以下のIssueをUX観点から分析してください：
               
-              内容：
-              {issue_body}
+              {analysis_context}
               
               以下の観点から分析してください：
               1. ユーザー体験への影響
               2. UIの改善提案
               3. ドキュメントの必要性
               4. ユーザーへの影響範囲
-              5. 移行計画（必要な場合）
-              
-              開発者とユーザーの両方の視点から、分かりやすい日本語で回答してください。
               """
               
+              print("🎨 GPT-3.5分析中...")
+              # GPT-3.5を使用（安価）
               openai_response = client.chat.completions.create(
-                  model="gpt-4",
+                  model="gpt-3.5-turbo",
                   messages=[{"role": "user", "content": ux_prompt}],
-                  max_tokens=1000
+                  max_tokens=1500
               )
-              
-              ux_analysis = openai_response.choices[0].message.content
-              print("💡 OpenAI - UX分析完了")
+              openai_analysis = openai_response.choices[0].message.content
+              print("✅ OpenAI分析完了")
               
           except Exception as e:
               print(f"OpenAI error: {e}")
-              ux_analysis = "UX分析でエラーが発生しました。"
+              openai_analysis = "UX分析でエラーが発生しました。"
           
-          # Phase 4: Claude - 統合レポート作成
+          # Phase 4: Claude Sonnetで統合（高品質）
           try:
               final_prompt = f"""
-              Issue #{issue_number}: {issue_title} について、3AIの分析結果を統合してください。
+              Issue #{issue_number}: {issue_title}
               
-              Claudeの要件分析：
+              3つのAIによる分析結果：
+              
+              **Claude（概要・実装提案）**：
               {claude_analysis}
               
-              Geminiの技術分析：
+              **Gemini（技術詳細）**：
               {gemini_analysis}
               
-              OpenAIのUX分析：
-              {ux_analysis}
+              **OpenAI（UX・ドキュメント）**：
+              {openai_analysis}
               
               これらを統合して、以下の形式で実装提案を作成してください：
               
@@ -231,69 +312,71 @@ jobs:
               開発者が実装を開始できる具体的な内容にしてください。
               """
               
+              # Claude Sonnetで統合（高品質な最終出力）
               final_response = claude_client.messages.create(
                   model="claude-3-5-sonnet-20241022",
                   max_tokens=2000,
                   messages=[{"role": "user", "content": final_prompt}]
               )
               
-              final_report = final_response.content[0].text
-              
-              # レポートを保存
+              # 最終レポート作成
               with open('issue_analysis.txt', 'w', encoding='utf-8') as f:
-                  f.write(f"# 🤖 3AI Issue Analysis Report\n\n")
-                  f.write(f"**Issue #{issue_number}: {issue_title}**\n\n")
-                  f.write(final_report)
-                  f.write("\n\n---\n### 🤝 3AI協調分析\n\n")
-                  f.write("- 📋 **Claude**: 要件分析・実装計画・統合レポート\n")
-                  f.write("- 🔍 **Gemini**: 技術分析・ベストプラクティス\n")
-                  f.write("- 💡 **OpenAI**: UX分析・ドキュメント戦略\n\n")
+                  f.write(f"# 🤖 3AI分析レポート: Issue #{issue_number}\n\n")
+                  f.write(f"**Issue**: {issue_title}\n")
+                  f.write(f"**Repository**: ${{ inputs.repository }}\n")
+                  f.write(f"**分析日時**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                  if comments:
+                      f.write(f"**コメント数**: {len(comments)}件（要約済み）\n")
+                  f.write("\n---\n\n")
+                  f.write(final_response.content[0].text)
+                  f.write("\n\n---\n\n")
+                  f.write("## 💰 コスト最適化された分析\n\n")
+                  f.write("- 📝 **要約**: Claude Haiku（安価）\n")
+                  f.write("- 🤖 **メイン分析**: Claude Sonnet（高性能）\n")
+                  f.write("- 🔮 **技術分析**: Gemini Flash（高速・安価）\n")
+                  f.write("- 🎨 **UX分析**: GPT-3.5（安価）\n")
+                  f.write("- 🔄 **統合**: Claude Sonnet（高品質）\n\n")
                   f.write("*Powered by [NFTT-GitHub-Workflows](https://github.com/NFTTechnology/NFTT-GitHub-Workflows)*")
               
-              print("\n✅ 3AI分析完了")
+              print("\n✅ 3AI分析完了（コスト最適化版）")
               
           except Exception as e:
               print(f"Final integration error: {e}")
               with open('issue_analysis.txt', 'w', encoding='utf-8') as f:
                   f.write(f"## ⚠️ 分析エラー\n\n3AI分析の実行中にエラーが発生しました。\n\nエラー: {str(e)}")
-          EOF
+          PYTHON_SCRIPT
           
           python analyze_issue.py
       
-      - name: Save Analysis Output
-        id: save-analysis
-        run: |
-          if [ -f issue_analysis.txt ]; then
-            # GitHub Outputに保存（マルチライン対応）
-            # ユニークな区切り文字を使用
-            echo "report<<ENDOF3AIANALYSIS" >> $GITHUB_OUTPUT
-            cat issue_analysis.txt >> $GITHUB_OUTPUT
-            echo "ENDOF3AIANALYSIS" >> $GITHUB_OUTPUT
-          else
-            echo "report=分析結果ファイルが見つかりません" >> $GITHUB_OUTPUT
-          fi
-      
       - name: Post Analysis Result
+        id: post-result
         if: inputs.issue_number
         uses: actions/github-script@v7
         with:
           github-token: ${{ github.token }}
           script: |
             const fs = require('fs');
-            let analysis = '';
             
-            try {
-              analysis = fs.readFileSync('issue_analysis.txt', 'utf8');
-            } catch (e) {
-              analysis = '## ⚠️ 分析結果の読み込みエラー\n\n分析結果ファイルが見つかりません。';
+            // ファイルが存在するか確認
+            if (!fs.existsSync('issue_analysis.txt')) {
+              console.error('❌ 分析結果ファイルが見つかりません');
+              core.setOutput('report', '分析結果ファイルが見つかりません');
+              return;
             }
             
-            if (analysis.trim()) {
-              const [owner, repo] = '${{ inputs.repository }}'.split('/');
-              await github.rest.issues.createComment({
-                owner: owner,
-                repo: repo,
-                issue_number: ${{ inputs.issue_number }},
-                body: analysis
-              });
-            }
+            // ファイルを読み込む
+            const report = fs.readFileSync('issue_analysis.txt', 'utf8');
+            
+            // Issueにコメントを投稿
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ inputs.issue_number }},
+              body: report
+            });
+            
+            // 出力として保存（エスケープ処理）
+            const escapedReport = report.replace(/"/g, '\\"').replace(/\n/g, '\\n');
+            core.setOutput('report', escapedReport);
+            
+            console.log('✅ 分析結果を投稿しました');
