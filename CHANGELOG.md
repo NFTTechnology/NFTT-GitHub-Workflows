@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- CHANGELOG date inconsistencies
+- README version guide showing deprecated versions
+- Missing API key links in documentation
+- Security policy contact email
+- Missing Claude API in PR review requirements
+- Default version information across documents
+
+## [v1.0.0] - 2025-07-06
+
+*Note: This repository was created on 2025-07-06. Previous dates represent the evolution of the workflows before public release.*
+
 ### Added
+- Initial public release of NFTT-GitHub-Workflows
 - Quick Start section in README for faster onboarding
 - Cost estimation guide for different usage patterns
 - FAQ section for common questions
@@ -37,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project-specific files (`implementation-plan-share-manga.md`)
 - Redundant `workflows` directory in docs
 
-## [v2.2.0] - 2024-11-26
+## [v2.2.0] - 2025-07-05 *(Pre-release)*
 
 ### Added
 - Token usage tracking and cost display in PR reviews
