@@ -1,0 +1,116 @@
+# モノレポ対応の実装例
+# 複数のプロジェクトが含まれるモノレポでの使用方法
+
+name: Monorepo AI Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      # 特定のパスに変更があった場合のみ実行
+      - 'packages/**'
+      - 'apps/**'
+      - '!**/*.md'  # ドキュメントは除外
+
+jobs:
+  # 変更されたパッケージを検出
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      changes: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'apps/web/**'
+              - 'packages/ui/**'
+            backend:
+              - 'apps/api/**'
+              - 'packages/core/**'
+            mobile:
+              - 'apps/mobile/**'
+              - 'packages/mobile-ui/**'
+      
+      - id: set-matrix
+        run: |
+          # 変更されたプロジェクトのマトリックスを生成
+          changes=$(echo '${{ toJSON(steps.filter.outputs) }}' | jq -c '[to_entries[] | select(.value == "true") | .key]')
+          echo "matrix={\"project\":$changes}" >> $GITHUB_OUTPUT
+
+  # プロジェクトごとにAIレビュー実行
+  review-project:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changes != '[]'
+    strategy:
+      matrix: ${{ fromJSON(needs.detect-changes.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: プロジェクト別設定
+        id: config
+        run: |
+          case "${{ matrix.project }}" in
+            frontend)
+              echo "review_type=balanced" >> $GITHUB_OUTPUT
+              echo "focus=UI/UX,パフォーマンス,アクセシビリティ" >> $GITHUB_OUTPUT
+              ;;
+            backend)
+              echo "review_type=detailed" >> $GITHUB_OUTPUT
+              echo "focus=セキュリティ,API設計,データベース" >> $GITHUB_OUTPUT
+              ;;
+            mobile)
+              echo "review_type=balanced" >> $GITHUB_OUTPUT
+              echo "focus=パフォーマンス,バッテリー消費,ネイティブ連携" >> $GITHUB_OUTPUT
+              ;;
+          esac
+      
+      - name: PR Review - ${{ matrix.project }}
+        uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review.yml@main
+        with:
+          pr_number: ${{ github.event.pull_request.number }}
+          repository: ${{ github.repository }}
+          review_type: ${{ steps.config.outputs.review_type }}
+          # プロジェクト固有のパスのみレビュー
+          path_filter: ${{ matrix.project }}
+          custom_prompt: |
+            このプロジェクトは${{ matrix.project }}です。
+            特に以下の観点でレビューしてください：
+            ${{ steps.config.outputs.focus }}
+        secrets: inherit
+
+  # 統合サマリーの作成
+  summary:
+    needs: review-project
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 統合レビューサマリー
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const projects = ${{ toJSON(needs.detect-changes.outputs.matrix) }};
+            
+            let summary = `## 📊 モノレポ AI レビューサマリー\n\n`;
+            summary += `### 変更されたプロジェクト\n`;
+            
+            for (const project of projects.project) {
+              summary += `- ✅ ${project}\n`;
+            }
+            
+            summary += `\n各プロジェクトの詳細なレビューは上記のコメントを参照してください。`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: summary
+            });
+
+# カスタマイズポイント：
+# 1. paths フィルターでプロジェクト構成に合わせて調整
+# 2. review_type をプロジェクトの重要度に応じて設定
+# 3. custom_prompt でプロジェクト固有の観点を追加

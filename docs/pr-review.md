@@ -17,8 +17,8 @@
 
 各リポジトリで以下のシークレットを設定してください：
 
-- `ANTHROPIC_API_KEY` - Claude API用
-- `OPENAI_API_KEY` - OpenAI API用
+- `ANTHROPIC_API_KEY` - Claude API用 ([取得方法](https://console.anthropic.com/settings/keys))
+- `OPENAI_API_KEY` - OpenAI API用 ([取得方法](https://platform.openai.com/api-keys))
 
 ### オプション
 - `GH_PAT` - より詳細なPR情報取得用（なくても動作します）
@@ -227,7 +227,94 @@ with:
 ### セキュリティパターンが検出されない
 → ソースコードファイルが含まれているか確認
 
+## 🔄 最新API情報
+
+### 使用モデル設定
+
+```yaml
+with:
+  models: '{
+    "claude": "claude-3-5-sonnet-20241022",  # 最新版
+    "openai": "gpt-4o-mini"                    # コスト最適化
+  }'
+```
+
+### 利用可能なモデル
+
+| AI | モデル | 特徴 | コスト |
+|----|--------|------|------|
+| Claude | claude-3-5-sonnet-20241022 | 最高精度 | $3/1M入力 |
+| Claude | claude-3-5-haiku-20241022 | 高速・安価 | $0.25/1M入力 |
+| OpenAI | gpt-4o | 最新GPT-4 | $2.50/1M入力 |
+| OpenAI | gpt-4o-mini | コスト効率 | $0.15/1M入力 |
+
+## ⚡ パフォーマンス最適化
+
+### 大きなPRの処理
+
+```yaml
+# 差分の制限
+with:
+  max_diff_lines: 5000  # デフォルト10000
+```
+
+### 条件付き実行
+
+```yaml
+# 特定のファイルのみレビュー
+if: |
+  contains(github.event.pull_request.files.*.filename, '.js') ||
+  contains(github.event.pull_request.files.*.filename, '.ts')
+```
+
+### キャッシュの活用
+
+```yaml
+# 同一PRの再レビューを防ぐ
+- uses: actions/cache@v4
+  with:
+    path: .pr-review-cache
+    key: pr-review-${{ github.event.pull_request.head.sha }}
+```
+
+## 📈 トークン使用量とコスト
+
+v2.2以降では、レビュー結果にトークン使用量とコストが表示されます：
+
+```markdown
+### 💰 Token Usage & Cost
+
+| Model | Input Tokens | Output Tokens | Cost (USD) |
+|-------|-------------|---------------|------------|
+| claude-3-5-sonnet | 5,234 | 1,256 | $0.0245 |
+| gpt-4o-mini | 3,421 | 892 | $0.0012 |
+| **Total** | **8,655** | **2,148** | **$0.0257** |
+```
+
+## 📊 コスト試算
+
+| レビュータイプ | PRあたりのコスト | 適用場面 |
+|------------|---------------|----------|
+| quick | $0.01-0.02 | 小さな変更 |
+| balanced | $0.02-0.05 | 通常のPR |
+| detailed | $0.05-0.10 | 大きな変更、セキュリティ |
+
 ## 📚 関連ドキュメント
 
 - [NFTT-GitHub-Workflows README](../README.md)
 - [セキュリティガイド](SECURITY.md)
+- [トラブルシューティング](TROUBLESHOOTING.md)
+- [モニタリングガイド](monitoring.md)
+- [コスト最適化ガイド](COST_OPTIMIZATION.md)
+
+## 🔗 外部リンク
+
+### セキュリティパターン検出
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [CWE/SANS Top 25](https://cwe.mitre.org/top25/)
+- [GitHub Advanced Security](https://docs.github.com/en/code-security)
+
+### AI APIドキュメント
+- [Claude Models](https://docs.anthropic.com/en/docs/about-claude/models)
+- [OpenAI Models](https://platform.openai.com/docs/models)
+- [GitHub API - Pull Requests](https://docs.github.com/en/rest/pulls)

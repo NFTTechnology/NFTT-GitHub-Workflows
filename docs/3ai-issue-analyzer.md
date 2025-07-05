@@ -12,9 +12,9 @@ GitHub IssueをClaude、OpenAI、Geminiの3つのAIで多角的に分析する�
 
 各リポジトリで以下のシークレットを設定してください：
 
-- `ANTHROPIC_API_KEY` - Claude API用
-- `OPENAI_API_KEY` - OpenAI API用  
-- `GEMINI_API_KEY` - Google Gemini API用
+- `ANTHROPIC_API_KEY` - Claude API用 ([取得方法](https://console.anthropic.com/settings/keys))
+- `OPENAI_API_KEY` - OpenAI API用 ([取得方法](https://platform.openai.com/api-keys))  
+- `GEMINI_API_KEY` - Google Gemini API用 ([取得方法](https://makersuite.google.com/app/apikey))
 
 ### 設定方法
 
@@ -153,7 +153,65 @@ if: |
 ### 権限エラー
 → ワークフローに `issues: write` 権限があることを確認
 
+## 🔄 最新API情報
+
+### 使用しているモデル
+
+| AI | モデル | 特徴 |
+|----|--------|------|
+| Claude | claude-3-5-sonnet-20241022 | 最新版、高精度 |
+| Claude | claude-3-5-haiku-20241022 | 高速、コスト効率 |
+| OpenAI | gpt-4o-mini | コスト最適化 |
+| Gemini | gemini-1.5-flash-latest | 高速処理 |
+
+### APIレート制限
+
+- **Claude**: 5リクエスト/分（デフォルト）
+- **OpenAI**: 10,000リクエスト/分（Tier 2）
+- **Gemini**: 1,500リクエスト/分
+
+## 📊 パフォーマンス最適化
+
+### 大きなIssueの処理
+
+```yaml
+# 長いIssue本文の場合、要約を先に実行
+with:
+  enable_summarization: true
+  max_body_length: 10000
+```
+
+### コメント履歴の活用
+
+v4以降では、コメント履歴を含めた分析が可能：
+
+```yaml
+uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer-v4.yml@main
+```
+
+## 💰 コスト試算
+
+| バージョン | 1回あたりのコスト | 特徴 |
+|----------|---------------|------|
+| v3 | $0.05-0.10 | シンプル、基本分析 |
+| v4 | $0.08-0.15 | コメント履歴含む |
+| v5 | $0.03-0.05 | コスト最適化版 |
+
 ## 📚 関連ドキュメント
 
 - [NFTT-GitHub-Workflows README](../README.md)
 - [コントリビューションガイド](CONTRIBUTING.md)
+- [トラブルシューティング](TROUBLESHOOTING.md)
+- [モニタリングガイド](monitoring.md)
+
+## 🔗 外部リンク
+
+### APIドキュメント
+- [Anthropic API Reference](https://docs.anthropic.com/en/api/messages)
+- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
+- [Google AI API Reference](https://ai.google.dev/gemini-api/docs)
+
+### GitHub Actions
+- [Reusable Workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows)
+- [Workflow syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
+- [Context and expression syntax](https://docs.github.com/en/actions/learn-github-actions/contexts)

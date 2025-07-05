@@ -1,0 +1,49 @@
+# 3AI Issue Analyzer テンプレート
+# このファイルをリポジトリの .github/workflows/ ディレクトリにコピーして使用してください
+# 
+# 必要なシークレット（Settings → Secrets and variables → Actions で設定）:
+# - ANTHROPIC_API_KEY
+# - OPENAI_API_KEY  
+# - GEMINI_API_KEY
+
+name: 3AI Issue Analysis
+
+on:
+  # Issueコメントトリガー
+  issue_comment:
+    types: [created]
+  
+  # 手動実行トリガー
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: '分析するIssue番号'
+        required: true
+        type: number
+
+jobs:
+  analyze-issue:
+    # /analyze コマンドまたは手動実行で分析開始
+    if: |
+      (github.event_name == 'issue_comment' && 
+       github.event.issue.pull_request == null &&
+       contains(github.event.comment.body, '/analyze')) ||
+      github.event_name == 'workflow_dispatch'
+    
+    # デフォルト版（最新版）を使用
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
+    
+    with:
+      issue_number: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.issue_number || github.event.issue.number }}
+      issue_title: ${{ github.event.issue.title || 'Manual Analysis' }}
+      issue_body: ${{ github.event.issue.body || 'Manual analysis requested' }}
+      repository: ${{ github.repository }}
+      comment_id: ${{ github.event.comment.id || 0 }}
+    
+    # シークレットを継承
+    secrets: inherit
+    
+    # 必要な権限
+    permissions:
+      issues: write
+      contents: read
