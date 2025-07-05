@@ -1,0 +1,20 @@
+name: Minimal Test
+
+on:
+  workflow_call:
+    inputs:
+      test_input:
+        required: true
+        type: string
+    outputs:
+      test_output:
+        value: ${{ jobs.test.outputs.result }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      result: "minimal_success"
+    steps:
+      - name: Minimal test
+        run: echo "Input: ${{ inputs.test_input }}"
