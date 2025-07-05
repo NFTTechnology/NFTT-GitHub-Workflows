@@ -17,8 +17,9 @@
 
 各リポジトリで以下のシークレットを設定してください：
 
-- `ANTHROPIC_API_KEY` - Claude API用 ([取得方法](https://console.anthropic.com/settings/keys))
-- `OPENAI_API_KEY` - OpenAI API用 ([取得方法](https://platform.openai.com/api-keys))
+- `ANTHROPIC_API_KEY` - Claude AI API用（Claude 3.5 Sonnet, Claude Opus 4等）([取得方法](https://console.anthropic.com/settings/keys))
+- `OPENAI_API_KEY` - OpenAI API用（GPT-4, GPT-4o等）([取得方法](https://platform.openai.com/api-keys))
+- `GEMINI_API_KEY` - Google Gemini API用（オプション）([取得方法](https://makersuite.google.com/app/apikey))
 
 ### オプション
 - `GH_PAT` - より詳細なPR情報取得用（なくても動作します）

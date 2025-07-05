@@ -1,0 +1,89 @@
+--- a/.github/workflows/reusable-pr-review-v2.2.yml
++++ b/.github/workflows/reusable-pr-review-v2.2.yml
+@@ -197,15 +197,51 @@ jobs:
+               else:
+                   other_files.append(file_info)
+           
+-          # セキュリティパターンのチェック
++          # ドキュメントファイルのみの変更かチェック
++          is_docs_only = len(source_files) == 0 and len(config_files) == 0
++          
++          # セキュリティパターンのチェック（ソースコードのみ）
+           security_issues = []
+-          for pattern_name, pattern_info in security_patterns.items():
+-              matches = re.findall(pattern_info['pattern'], diff_content, re.IGNORECASE | re.MULTILINE)
+-              if matches:
+-                  security_issues.append({
+-                      'type': pattern_name,
+-                      'severity': pattern_info['severity'],
+-                      'message': pattern_info['message'],
+-                      'count': len(matches),
+-                      'samples': matches[:3]
+-                  })
++          
++          if not is_docs_only:
++              # ソースコードファイルの差分のみを抽出
++              source_code_diff = ""
++              
++              # ソースファイルと設定ファイルの差分を収集
++              for file in source_files + config_files:
++                  file_pattern = rf"diff --git.*{re.escape(file['path'])}.*?(?=diff --git|$)"
++                  file_diff_match = re.search(file_pattern, diff_content, re.DOTALL)
++                  if file_diff_match:
++                      source_code_diff += file_diff_match.group(0) + "\n\n"
++              
++              # ソースコードの差分に対してのみセキュリティパターンをチェック
++              if source_code_diff:
++                  for pattern_name, pattern_info in security_patterns.items():
++                      matches = re.findall(pattern_info['pattern'], source_code_diff, re.IGNORECASE | re.MULTILINE)
++                      if matches:
++                          # ファイル名を特定して記録
++                          file_matches = []
++                          for match in matches:
++                              # マッチした内容がどのファイルに含まれているか特定
++                              for file in source_files + config_files:
++                                  file_pattern = rf"diff --git.*{re.escape(file['path'])}.*?(?=diff --git|$)"
++                                  file_diff_match = re.search(file_pattern, diff_content, re.DOTALL)
++                                  if file_diff_match and match in file_diff_match.group(0):
++                                      file_matches.append({
++                                          'file': file['path'],
++                                          'match': match
++                                      })
++                                      break
++                          
++                          if file_matches:
++                              security_issues.append({
++                                  'type': pattern_name,
++                                  'severity': pattern_info['severity'],
++                                  'message': pattern_info['message'],
++                                  'count': len(file_matches),
++                                  'samples': [fm['match'] for fm in file_matches[:3]],
++                                  'files': list(set([fm['file'] for fm in file_matches]))
++                              })
+           
+           # セキュリティ問題を深刻度でソート
+@@ -270,6 +306,11 @@ jobs:
+           
+           # セキュリティ問題の情報を整理
+           security_summary = ""
++          if is_docs_only:
++              security_summary = "\\n## 📝 ドキュメントのみの変更\\n"
++              security_summary += "ソースコードの変更がないため、セキュリティスキャンはスキップされました。\\n"
++          
+           if security_issues:
+               security_summary = "\\n## 🚨 自動検出されたセキュリティ問題\\n"
+               for issue in security_issues[:5]:  # 最大5件
+                   security_summary += f"- **{issue['message']}** ({issue['severity']}): {issue['count']}件検出\\n"
++                  if 'files' in issue:
++                      security_summary += f"  - 対象ファイル: {', '.join(issue['files'][:3])}\\n"
+@@ -449,6 +490,8 @@ jobs:
+                   report += f"- 検出数: {issue['count']}件\n"
+                   if issue['samples'] and enable_suggestions:
+                       report += f"- サンプル: `{issue['samples'][0][:50]}...`\n"
++                  if 'files' in issue:
++                      report += f"- 対象ファイル: {', '.join(issue['files'][:3])}\n"
+                   report += "\n"
++          elif is_docs_only:
++              report += "ドキュメントのみの変更のため、セキュリティスキャンはスキップされました。\n\n"
+           else:
+               report += "セキュリティパターンの自動検出では問題は見つかりませんでした。\n\n"
