@@ -14,7 +14,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     outputs:
-      result: "minimal_success"
+      result: ${{ steps.set-output.outputs.result }}
     steps:
       - name: Minimal test
         run: echo "Input: ${{ inputs.test_input }}"
+      
+      - name: Set output
+        id: set-output
+        run: echo "result=minimal_success" >> $GITHUB_OUTPUT
