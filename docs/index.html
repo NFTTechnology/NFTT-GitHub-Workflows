@@ -3,142 +3,489 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="エンタープライズグレードのAI駆動型GitHub Actionsワークフロー。Claude 3.5、GPT-4、Gemini Proによる自動コードレビューとIssue分析。">
     <title>NFTT-GitHub-Workflows ドキュメント</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f6f8fa;
+        :root {
+            --primary-color: #0969da;
+            --primary-hover: #0860ca;
+            --secondary-color: #1b7f37;
+            --background: #ffffff;
+            --surface: #f6f8fa;
+            --border: #d1d9e0;
+            --text-primary: #1f2328;
+            --text-secondary: #656d76;
+            --shadow-sm: 0 1px 0 rgba(31, 35, 40, 0.04);
+            --shadow-md: 0 3px 6px rgba(140, 149, 159, 0.15);
+            --shadow-lg: 0 8px 24px rgba(140, 149, 159, 0.2);
+            --radius: 6px;
+            --radius-lg: 12px;
         }
-        .container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #24292e;
-            border-bottom: 2px solid #e1e4e8;
-            padding-bottom: 10px;
-        }
-        h2 {
-            color: #24292e;
-            margin-top: 30px;
-        }
-        a {
-            color: #0366d6;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            margin: 2px;
-            background-color: #0366d6;
-            color: white;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-        .guide-list {
-            list-style: none;
+
+        * {
+            margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
-        .guide-list li {
-            margin: 15px 0;
-            padding: 15px;
-            background-color: #f6f8fa;
-            border-radius: 5px;
-            border-left: 4px solid #0366d6;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            color: var(--text-primary);
+            background-color: var(--surface);
+            min-height: 100vh;
         }
-        .guide-list li strong {
+
+        /* ヘッダー */
+        .header {
+            background: linear-gradient(180deg, #ffffff 0%, #f6f8fa 100%);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* ヒーローセクション */
+        .hero {
+            background: var(--background);
+            padding: 4rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #0969da 0%, #1b7f37 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            background-color: var(--surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .badge-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .badge-success {
+            background-color: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-color);
+        }
+
+        /* メインコンテンツ */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .section-icon {
+            font-size: 1.5rem;
+        }
+
+        /* カードグリッド */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
             display: block;
-            margin-bottom: 5px;
+            box-shadow: var(--shadow-sm);
         }
-        .center {
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-color);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        /* フッター */
+        .footer {
+            background: var(--background);
+            border-top: 1px solid var(--border);
+            padding: 3rem 2rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
             text-align: center;
         }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .footer-text {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        /* アニメーション */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            animation: fadeIn 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+
+        /* レスポンシブ */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+                font-size: 0.875rem;
+            }
+
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        /* ユーティリティ */
+        .text-center { text-align: center; }
+        .mt-3 { margin-top: 3rem; }
+        .mb-3 { margin-bottom: 3rem; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🌐 NFTT-GitHub-Workflows</h1>
-        <p class="center">
-            <span class="badge">v5 最新版</span>
-            <span class="badge">3AI対応</span>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="header-content">
+            <a href="#" class="logo">
+                <span>🌐</span>
+                <span>NFTT-GitHub-Workflows</span>
+            </a>
+            <nav class="nav-links">
+                <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows">GitHub</a>
+                <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues">Issues</a>
+                <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows/discussions">Discussions</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ヒーローセクション -->
+    <section class="hero">
+        <h1>NFTT-GitHub-Workflows</h1>
+        <p>エンタープライズグレードのAI駆動型GitHub Actionsワークフロー</p>
+        <div class="badges">
+            <span class="badge badge-primary">v5 最新版</span>
+            <span class="badge badge-success">3AI対応</span>
+            <span class="badge">Claude 3.5</span>
+            <span class="badge">GPT-4</span>
+            <span class="badge">Gemini Pro</span>
             <span class="badge">日本語対応</span>
-        </p>
+        </div>
+    </section>
 
-        <h2>📚 ドキュメント一覧</h2>
-        
-        <h3>🚀 はじめに</h3>
-        <ul class="guide-list">
-            <li>
-                <strong><a href="3AI_ANALYZER_GUIDE.html">3AI Issue分析ガイド</a></strong>
-                完全なセットアップ手順と使用方法
-            </li>
-            <li>
-                <strong><a href="pr-review.html">PRレビューガイド</a></strong>
-                自動コードレビューの設定方法
-            </li>
-        </ul>
+    <!-- メインコンテンツ -->
+    <main class="container">
+        <!-- はじめに -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">🚀</span>
+                <h2>はじめに</h2>
+            </div>
+            <div class="card-grid">
+                <a href="3AI_ANALYZER_GUIDE.html" class="card">
+                    <h3 class="card-title">
+                        <span>📘</span>
+                        3AI Issue分析ガイド
+                    </h3>
+                    <p class="card-description">
+                        Claude、GPT-4、Geminiを使用した高度なIssue分析の完全なセットアップ手順と使用方法
+                    </p>
+                </a>
+                <a href="pr-review.html" class="card">
+                    <h3 class="card-title">
+                        <span>🔍</span>
+                        PRレビューガイド
+                    </h3>
+                    <p class="card-description">
+                        AIによる自動コードレビューの設定方法と最適化のベストプラクティス
+                    </p>
+                </a>
+            </div>
+        </section>
 
-        <h3>📖 詳細ガイド</h3>
-        <ul class="guide-list">
-            <li>
-                <strong><a href="USAGE_PATTERNS.html">使用パターン集</a></strong>
-                プロジェクト規模別の実装例
-            </li>
-            <li>
-                <strong><a href="VERSION_COMPARISON.html">バージョン比較</a></strong>
-                各バージョンの機能と選び方
-            </li>
-            <li>
-                <strong><a href="COST_OPTIMIZATION.html">コスト最適化</a></strong>
-                API使用料を削減する方法
-            </li>
-        </ul>
+        <!-- 詳細ガイド -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">📖</span>
+                <h2>詳細ガイド</h2>
+            </div>
+            <div class="card-grid">
+                <a href="USAGE_PATTERNS.html" class="card">
+                    <h3 class="card-title">
+                        <span>📋</span>
+                        使用パターン集
+                    </h3>
+                    <p class="card-description">
+                        プロジェクト規模別の実装例とカスタマイズ方法
+                    </p>
+                </a>
+                <a href="VERSION_COMPARISON.html" class="card">
+                    <h3 class="card-title">
+                        <span>⚖️</span>
+                        バージョン比較
+                    </h3>
+                    <p class="card-description">
+                        各バージョンの機能比較と最適な選択方法
+                    </p>
+                </a>
+                <a href="COST_OPTIMIZATION.html" class="card">
+                    <h3 class="card-title">
+                        <span>💰</span>
+                        コスト最適化
+                    </h3>
+                    <p class="card-description">
+                        API使用料を最小限に抑える効果的な戦略
+                    </p>
+                </a>
+            </div>
+        </section>
 
-        <h3>🛠️ 技術情報</h3>
-        <ul class="guide-list">
-            <li>
-                <strong><a href="TROUBLESHOOTING.html">トラブルシューティング</a></strong>
-                よくある問題と解決方法
-            </li>
-            <li>
-                <strong><a href="monitoring.html">モニタリング</a></strong>
-                使用状況の追跡方法
-            </li>
-            <li>
-                <strong><a href="KNOWN_ISSUES.html">既知の問題</a></strong>
-                現在確認されている制限事項
-            </li>
-        </ul>
+        <!-- 技術情報 -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">🛠️</span>
+                <h2>技術情報</h2>
+            </div>
+            <div class="card-grid">
+                <a href="TROUBLESHOOTING.html" class="card">
+                    <h3 class="card-title">
+                        <span>🔧</span>
+                        トラブルシューティング
+                    </h3>
+                    <p class="card-description">
+                        よくある問題と解決方法、デバッグのヒント
+                    </p>
+                </a>
+                <a href="monitoring.html" class="card">
+                    <h3 class="card-title">
+                        <span>📊</span>
+                        モニタリング
+                    </h3>
+                    <p class="card-description">
+                        使用状況とパフォーマンスの追跡方法
+                    </p>
+                </a>
+                <a href="KNOWN_ISSUES.html" class="card">
+                    <h3 class="card-title">
+                        <span>⚠️</span>
+                        既知の問題
+                    </h3>
+                    <p class="card-description">
+                        現在確認されている制限事項と回避策
+                    </p>
+                </a>
+            </div>
+        </section>
 
-        <h3>🔒 セキュリティ・貢献</h3>
-        <ul class="guide-list">
-            <li>
-                <strong><a href="SECURITY.html">セキュリティポリシー</a></strong>
-                脆弱性の報告方法
-            </li>
-        </ul>
+        <!-- セキュリティ -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">🔒</span>
+                <h2>セキュリティ</h2>
+            </div>
+            <div class="card-grid">
+                <a href="SECURITY.html" class="card">
+                    <h3 class="card-title">
+                        <span>🛡️</span>
+                        セキュリティポリシー
+                    </h3>
+                    <p class="card-description">
+                        脆弱性の報告方法とセキュリティベストプラクティス
+                    </p>
+                </a>
+            </div>
+        </section>
+    </main>
 
-        <h2>🔗 リンク</h2>
-        <p>
-            <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows">GitHubリポジトリ</a> |
-            <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues">Issue報告</a> |
-            <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows/releases">リリース</a>
-        </p>
-
-        <hr style="margin-top: 50px;">
-        <p class="center" style="color: #666; font-size: 14px;">
-            © 2025 NFTTechnology. Made with ❤️
-        </p>
-    </div>
+    <!-- フッター -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows">
+                    <span>📦</span>
+                    GitHubリポジトリ
+                </a>
+                <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues">
+                    <span>🐛</span>
+                    Issue報告
+                </a>
+                <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows/releases">
+                    <span>🚀</span>
+                    リリース
+                </a>
+                <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows/discussions">
+                    <span>💬</span>
+                    ディスカッション
+                </a>
+            </div>
+            <p class="footer-text">
+                © 2025 NFTTechnology. Made with ❤️ and powered by AI
+            </p>
+        </div>
+    </footer>
 </body>
 </html>
