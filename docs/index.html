@@ -338,12 +338,22 @@
         }
 
         .demo-card {
+            position: relative;
             background: var(--background);
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             overflow: hidden;
             transition: all 0.3s;
             box-shadow: var(--shadow-md);
+        }
+
+        .demo-card-link {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
         }
 
         .demo-card:hover {
@@ -400,7 +410,7 @@
         }
 
         .demo-screenshot.auto-scroll img {
-            animation: autoScroll 30s linear infinite;
+            animation: autoScroll 60s linear infinite;
         }
 
         @keyframes autoScroll {
@@ -426,6 +436,8 @@
         }
 
         .demo-button {
+            position: relative;
+            z-index: 2;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
@@ -512,6 +524,7 @@
             <div class="demo-grid">
                 <!-- Issue分析デモ -->
                 <div class="demo-card">
+                    <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues/28" class="demo-card-link" target="_blank" aria-label="Issue #28を見る"></a>
                     <div class="demo-card-header">
                         <h3>
                             <span>🔍</span>
@@ -541,6 +554,7 @@
 
                 <!-- PRレビューデモ -->
                 <div class="demo-card">
+                    <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows/pull/27" class="demo-card-link" target="_blank" aria-label="PR #27を見る"></a>
                     <div class="demo-card-header">
                         <h3>
                             <span>🤖</span>
