@@ -335,7 +335,7 @@ If you need assistance:
 
 **DO NOT** create public issues for security vulnerabilities. Instead:
 
-1. Email security@nfttechnology.com
+1. Email goda@nftt.co.jp
 2. Include detailed description and steps to reproduce
 3. Allow 48 hours for initial response
 

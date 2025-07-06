@@ -163,7 +163,7 @@ jobs:
             -H "Authorization: Bearer $API_KEY" \
             -H "Content-Type: application/json" \
             --fail-with-body \
-            https://api.example.com/endpoint)
+            "$API_ENDPOINT")
           
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
@@ -305,7 +305,7 @@ We recognize security researchers who have helped improve our security:
 
 ## 📞 Contact
 
-- **Security Team**: security@nfttechnology.com
+- **Security Team**: goda@nftt.co.jp
 - **Bug Bounty**: [Program Details](https://nfttechnology.com/bug-bounty)
 - **Security Updates**: [Subscribe](https://nfttechnology.com/security-updates)
 

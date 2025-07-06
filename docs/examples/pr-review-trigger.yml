@@ -63,4 +63,3 @@ jobs:
         run: |
           echo "PR #${{ steps.pr-details.outputs.number }}: ${{ steps.pr-details.outputs.title }}"
           echo "Changed files: ${{ steps.pr-details.outputs.changed_files }}"
-          # TODO: 3AI PR レビュー実装
