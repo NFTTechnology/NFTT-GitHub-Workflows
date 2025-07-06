@@ -200,6 +200,24 @@
 
 ### 🎬 インストール
 
+#### 🚀 ワンクリックインストール（推奨）
+
+**方法1: インストールスクリプト**
+```bash
+curl -fsSL https://raw.githubusercontent.com/NFTTechnology/NFTT-GitHub-Workflows/main/install.sh | bash
+```
+
+**方法2: GitHub CLI Extension**
+```bash
+# 拡張機能をインストール
+gh extension install NFTTechnology/NFTT-GitHub-Workflows --force
+
+# ワークフローをインストール
+gh nftt-workflows install
+```
+
+または、手動でインストール：
+
 <details>
 <summary><b>1️⃣ ワークフローファイルの作成</b>（クリックして展開）</summary>
 

@@ -371,16 +371,58 @@
 
         .demo-screenshot {
             width: 100%;
-            height: 200px;
+            height: 300px;
             background: var(--surface);
             border-radius: var(--radius);
             margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .demo-screenshot-container {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            position: relative;
+        }
+
+        .demo-screenshot img {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .demo-screenshot.auto-scroll .demo-screenshot-container {
+            overflow: hidden;
+        }
+
+        .demo-screenshot.auto-scroll img {
+            animation: autoScroll 30s linear infinite;
+        }
+
+        @keyframes autoScroll {
+            0% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(calc(-100% + 300px));
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        .demo-screenshot-placeholder {
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--text-secondary);
             font-size: 0.875rem;
-            border: 1px solid var(--border);
         }
 
         .demo-button {
@@ -477,10 +519,9 @@
                         </h3>
                     </div>
                     <div class="demo-card-body">
-                        <div class="demo-screenshot">
-                            <div style="text-align: center;">
-                                <div style="font-size: 3rem; margin-bottom: 0.5rem;">📋</div>
-                                <div>Issue分析のスクリーンショット</div>
+                        <div class="demo-screenshot auto-scroll">
+                            <div class="demo-screenshot-container">
+                                <img src="images/issue-28-demo.png" alt="Issue #28の3AI分析デモ" loading="lazy">
                             </div>
                         </div>
                         <p style="margin-bottom: 1rem;">
@@ -507,10 +548,9 @@
                         </h3>
                     </div>
                     <div class="demo-card-body">
-                        <div class="demo-screenshot">
-                            <div style="text-align: center;">
-                                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔄</div>
-                                <div>PRレビューのスクリーンショット</div>
+                        <div class="demo-screenshot auto-scroll">
+                            <div class="demo-screenshot-container">
+                                <img src="images/pr-27-demo.png" alt="PR #27の3AIレビューデモ" loading="lazy">
                             </div>
                         </div>
                         <p style="margin-bottom: 1rem;">
@@ -687,5 +727,34 @@
             </p>
         </div>
     </footer>
+    <script>
+        // スクリーンショットのスクロール制御
+        document.addEventListener('DOMContentLoaded', function() {
+            const screenshots = document.querySelectorAll('.demo-screenshot');
+            
+            screenshots.forEach(screenshot => {
+                const container = screenshot.querySelector('.demo-screenshot-container');
+                const img = screenshot.querySelector('img');
+                
+                // クリックで自動スクロールの切り替え
+                img.addEventListener('click', function() {
+                    screenshot.classList.toggle('auto-scroll');
+                });
+                
+                // マウスホバーで自動スクロールを一時停止
+                screenshot.addEventListener('mouseenter', function() {
+                    if (screenshot.classList.contains('auto-scroll')) {
+                        img.style.animationPlayState = 'paused';
+                    }
+                });
+                
+                screenshot.addEventListener('mouseleave', function() {
+                    if (screenshot.classList.contains('auto-scroll')) {
+                        img.style.animationPlayState = 'running';
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

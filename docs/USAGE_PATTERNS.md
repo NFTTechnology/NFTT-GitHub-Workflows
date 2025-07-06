@@ -4,6 +4,47 @@
 
 NFTT-GitHub-Workflowsの実践的な使用パターンを紹介します。プロジェクトの規模や目的に応じて、最適なパターンを選択してください。
 
+## 🚀 インストール方法
+
+### ワンクリックインストール
+
+```bash
+# 方法1: インストールスクリプト
+curl -fsSL https://raw.githubusercontent.com/NFTTechnology/NFTT-GitHub-Workflows/main/install.sh | bash
+
+# 方法2: GitHub CLI Extension
+gh extension install NFTTechnology/NFTT-GitHub-Workflows --force
+gh nftt-workflows install
+```
+
+### 環境別インストール
+
+#### CI/CD環境での自動セットアップ
+```yaml
+# .github/workflows/setup-nftt.yml
+name: Setup NFTT Workflows
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install NFTT Workflows
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/NFTTechnology/NFTT-GitHub-Workflows/main/install.sh | bash -s -- --non-interactive --version v5
+```
+
+#### Dockerコンテナでの利用
+```dockerfile
+FROM ubuntu:latest
+RUN apt-get update && apt-get install -y curl git
+RUN curl -fsSL https://raw.githubusercontent.com/NFTTechnology/NFTT-GitHub-Workflows/main/install.sh -o /tmp/install.sh && \
+    chmod +x /tmp/install.sh && \
+    /tmp/install.sh --non-interactive
+```
+
 ## 🏗️ プロジェクト規模別パターン
 
 ### 小規模プロジェクト（〜10人チーム）
