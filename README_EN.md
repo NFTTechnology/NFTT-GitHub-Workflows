@@ -134,7 +134,7 @@ on:
 
 jobs:
   analyze:
-    if: contains(github.event.comment.body, '/analyze') || github.event_name == 'pull_request'
+    if: startsWith(github.event.comment.body, '/analyze') || github.event_name == 'pull_request'
     uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
     with:
       issue_number: ${{ github.event.issue.number || github.event.pull_request.number }}

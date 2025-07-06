@@ -23,7 +23,7 @@ Timestamp: 2025-01-15T14:23:45.123Z
 ```
 
 ### 再現手順
-1. Issue作成後、`@ai analyze` コメントを投稿
+1. Issue作成後、`/analyze` コメントを投稿
 2. 3AIワークフローが開始
 3. GPT-4とGeminiの分析は完了
 4. Claude APIのリクエストで30秒タイムアウト発生

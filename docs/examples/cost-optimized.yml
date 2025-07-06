@@ -67,7 +67,7 @@ jobs:
     if: |
       needs.check-budget.outputs.can_proceed == 'true' &&
       github.event_name == 'issue_comment' &&
-      contains(github.event.comment.body, '/analyze-budget')
+      startsWith(github.event.comment.body, '/analyze-budget')
     uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer-v5.yml@main
     with:
       issue_number: ${{ github.event.issue.number }}

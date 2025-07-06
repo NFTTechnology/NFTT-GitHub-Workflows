@@ -19,7 +19,7 @@ on:
 jobs:
   analyze:
     if: |
-      contains(github.event.comment.body, '/analyze') &&
+      startsWith(github.event.comment.body, '/analyze') &&
       (github.event.comment.author_association == 'OWNER' ||
        github.event.comment.author_association == 'MEMBER')
     uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
@@ -52,7 +52,7 @@ on:
 
 jobs:
   analyze-comment:
-    if: contains(github.event.comment.body, '/analyze')
+    if: startsWith(github.event.comment.body, '/analyze')
     uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
     with:
       issue_number: ${{ github.event.issue.number }}
@@ -241,7 +241,7 @@ on:
 
 jobs:
   analyze:
-    if: contains(github.event.comment.body, '/analyze')
+    if: startsWith(github.event.comment.body, '/analyze')
     uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
     with:
       issue_number: ${{ github.event.issue.number }}

@@ -144,7 +144,7 @@ on:
 
 jobs:
   analyze:
-    if: contains(github.event.comment.body, '/analyze') || github.event_name == 'pull_request'
+    if: startsWith(github.event.comment.body, '/analyze') || github.event_name == 'pull_request'
     uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-3ai-issue-analyzer.yml@main
     # 注意：これはデフォルトで最新版（v5）を使用します。特定バージョンには@v4や@v3を指定してください
     with:
