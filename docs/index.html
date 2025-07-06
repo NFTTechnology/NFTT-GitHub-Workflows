@@ -410,14 +410,30 @@
         }
 
         .demo-screenshot.auto-scroll img {
-            animation: autoScroll 60s linear infinite;
+            animation: autoScroll 90s linear infinite;
+        }
+
+        .demo-screenshot.auto-scroll-slow img {
+            animation: autoScrollSlow 120s linear infinite;
         }
 
         @keyframes autoScroll {
             0% {
                 transform: translateY(0);
             }
-            50% {
+            99% {
+                transform: translateY(calc(-100% + 300px));
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes autoScrollSlow {
+            0% {
+                transform: translateY(0);
+            }
+            99% {
                 transform: translateY(calc(-100% + 300px));
             }
             100% {
@@ -562,7 +578,7 @@
                         </h3>
                     </div>
                     <div class="demo-card-body">
-                        <div class="demo-screenshot auto-scroll">
+                        <div class="demo-screenshot auto-scroll-slow">
                             <div class="demo-screenshot-container">
                                 <img src="images/pr-27-demo.png" alt="PR #27の3AIレビューデモ" loading="lazy">
                             </div>
@@ -828,18 +844,22 @@
                 
                 // クリックで自動スクロールの切り替え
                 img.addEventListener('click', function() {
-                    screenshot.classList.toggle('auto-scroll');
+                    if (screenshot.classList.contains('auto-scroll-slow')) {
+                        screenshot.classList.toggle('auto-scroll-slow');
+                    } else {
+                        screenshot.classList.toggle('auto-scroll');
+                    }
                 });
                 
                 // マウスホバーで自動スクロールを一時停止
                 screenshot.addEventListener('mouseenter', function() {
-                    if (screenshot.classList.contains('auto-scroll')) {
+                    if (screenshot.classList.contains('auto-scroll') || screenshot.classList.contains('auto-scroll-slow')) {
                         img.style.animationPlayState = 'paused';
                     }
                 });
                 
                 screenshot.addEventListener('mouseleave', function() {
-                    if (screenshot.classList.contains('auto-scroll')) {
+                    if (screenshot.classList.contains('auto-scroll') || screenshot.classList.contains('auto-scroll-slow')) {
                         img.style.animationPlayState = 'running';
                     }
                 });
