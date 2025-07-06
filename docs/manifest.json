@@ -1,0 +1,17 @@
+{
+  "name": "NFTT-GitHub-Workflows",
+  "short_name": "NFTT-Workflows",
+  "description": "3つのAIによる自動コードレビューとIssue分析システム",
+  "icons": [
+    {
+      "src": "/favicon/logo-original.png",
+      "sizes": "400x400",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/NFTT-GitHub-Workflows/",
+  "display": "standalone",
+  "theme_color": "#0969da",
+  "background_color": "#ffffff",
+  "lang": "ja"
+}
