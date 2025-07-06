@@ -544,12 +544,16 @@ jobs:
               f.write(report)
           
           # 判定結果を出力（GitHub Actions用）
-          if '✅ 承認可能' in summary:
-              print("::set-output name=verdict::approved")
-          elif '⚠️ 条件付き承認' in summary:
-              print("::set-output name=verdict::conditional")
-          else:
-              print("::set-output name=verdict::changes_requested")
+          import os
+          github_output = os.environ.get('GITHUB_OUTPUT', '')
+          if github_output:
+              with open(github_output, 'a') as f:
+                  if '✅ 承認可能' in summary:
+                      f.write("verdict=approved\n")
+                  elif '⚠️ 条件付き承認' in summary:
+                      f.write("verdict=conditional\n")
+                  else:
+                      f.write("verdict=changes_requested\n")
           
           print(f"Enhanced multi-role review completed. Security issues: {len(security_issues)}")
           PYTHON_SCRIPT

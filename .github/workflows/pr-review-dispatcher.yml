@@ -40,6 +40,10 @@ permissions:
 jobs:
   trigger-review:
     runs-on: ubuntu-latest
+    outputs:
+      number: ${{ steps.pr.outputs.number }}
+      version: ${{ steps.pr.outputs.version }}
+      type: ${{ steps.pr.outputs.type }}
     steps:
       - name: Determine PR number
         id: pr
@@ -80,7 +84,7 @@ jobs:
   review-v1:
     needs: trigger-review
     if: needs.trigger-review.outputs.version == 'v1' || needs.trigger-review.outputs.version == ''
-    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review-v1.yml@main
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review.yml@main
     with:
       pr_number: ${{ needs.trigger-review.outputs.number }}
       repository: ${{ github.repository }}
@@ -92,7 +96,7 @@ jobs:
   review-v2:
     needs: trigger-review
     if: needs.trigger-review.outputs.version == 'v2'
-    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review-v2.yml@main
+    uses: NFTTechnology/NFTT-GitHub-Workflows/.github/workflows/reusable-pr-review-v2.2.yml@main
     with:
       pr_number: ${{ needs.trigger-review.outputs.number }}
       repository: ${{ github.repository }}

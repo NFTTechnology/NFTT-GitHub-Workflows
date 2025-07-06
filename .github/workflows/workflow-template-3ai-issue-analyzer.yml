@@ -21,6 +21,10 @@ on:
         required: true
         type: number
 
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   analyze-issue:
     # /analyze コマンドまたは手動実行で分析開始
@@ -42,8 +46,3 @@ jobs:
     
     # シークレットを継承
     secrets: inherit
-    
-    # 必要な権限
-    permissions:
-      issues: write
-      contents: read
