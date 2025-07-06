@@ -9,8 +9,8 @@ on:
     branches:
       - main
     paths:
-      - 'workflows/**'
-      - '.github/workflows/test-*.yml'
+      - '.github/workflows/reusable-*.yml'
+      - '.github/workflows/ci-test-*.yml'
   workflow_dispatch:
 
 jobs:

@@ -6,7 +6,7 @@ on:
 
 jobs:
   analyze:
-    if: contains(github.event.comment.body, '/analyze')
+    if: contains(github.event.comment.body, '/analyze') && github.event.comment.user.login != 'github-actions[bot]'
     uses: ./.github/workflows/reusable-3ai-issue-analyzer-v3.yml
     with:
       issue_number: ${{ github.event.issue.number }}
