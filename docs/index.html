@@ -65,6 +65,12 @@
             gap: 0.5rem;
         }
 
+        .logo img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
         .nav-links {
             display: flex;
             gap: 2rem;
@@ -301,6 +307,120 @@
             }
         }
 
+        /* デモセクション */
+        .demo-section {
+            background: linear-gradient(135deg, #f6f8fa 0%, #ffffff 100%);
+            padding: 4rem 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .demo-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .demo-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .demo-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .demo-card {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-md);
+        }
+
+        .demo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .demo-card-header {
+            padding: 1.5rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .demo-card-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .demo-card-body {
+            padding: 1.5rem;
+        }
+
+        .demo-screenshot {
+            width: 100%;
+            height: 200px;
+            background: var(--surface);
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            border: 1px solid var(--border);
+        }
+
+        .demo-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius);
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .demo-button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .demo-features {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+        }
+
+        .demo-features li {
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .demo-features li::before {
+            content: "✓";
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+
         /* ユーティリティ */
         .text-center { text-align: center; }
         .mt-3 { margin-top: 3rem; }
@@ -312,7 +432,7 @@
     <header class="header">
         <div class="header-content">
             <a href="#" class="logo">
-                <span>🌐</span>
+                <img src="https://avatars.githubusercontent.com/u/118800147?s=400&u=3347fa23eb73c6d6590247a269902fc2e3f3be13&v=4" alt="NFTTechnology">
                 <span>NFTT-GitHub-Workflows</span>
             </a>
             <nav class="nav-links">
@@ -334,6 +454,86 @@
             <span class="badge">GPT-4</span>
             <span class="badge">Gemini Pro</span>
             <span class="badge">日本語対応</span>
+        </div>
+    </section>
+
+    <!-- デモセクション -->
+    <section class="demo-section">
+        <div class="demo-content">
+            <div class="demo-header">
+                <h2>🎯 実際の動作を見てみる</h2>
+                <p style="font-size: 1.125rem; color: var(--text-secondary);">
+                    3つのAIが協力してIssue分析とPRレビューを行う様子をご覧ください
+                </p>
+            </div>
+
+            <div class="demo-grid">
+                <!-- Issue分析デモ -->
+                <div class="demo-card">
+                    <div class="demo-card-header">
+                        <h3>
+                            <span>🔍</span>
+                            3AI Issue分析デモ
+                        </h3>
+                    </div>
+                    <div class="demo-card-body">
+                        <div class="demo-screenshot">
+                            <div style="text-align: center;">
+                                <div style="font-size: 3rem; margin-bottom: 0.5rem;">📋</div>
+                                <div>Issue分析のスクリーンショット</div>
+                            </div>
+                        </div>
+                        <p style="margin-bottom: 1rem;">
+                            実際のIssueで <code>/analyze</code> コマンドがどのように動作するかをご覧いただけます。
+                        </p>
+                        <ul class="demo-features">
+                            <li>Claude、GPT-4、Geminiによる多角的分析</li>
+                            <li>優先度と影響度の自動判定</li>
+                            <li>実装方針の具体的な提案</li>
+                        </ul>
+                        <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows/issues/28" class="demo-button" target="_blank">
+                            <span>👀</span>
+                            デモIssueを見る
+                        </a>
+                    </div>
+                </div>
+
+                <!-- PRレビューデモ -->
+                <div class="demo-card">
+                    <div class="demo-card-header">
+                        <h3>
+                            <span>🤖</span>
+                            3AI PRレビューデモ
+                        </h3>
+                    </div>
+                    <div class="demo-card-body">
+                        <div class="demo-screenshot">
+                            <div style="text-align: center;">
+                                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔄</div>
+                                <div>PRレビューのスクリーンショット</div>
+                            </div>
+                        </div>
+                        <p style="margin-bottom: 1rem;">
+                            実際のPRで3AIが協調してコードレビューを行う様子をご覧いただけます。
+                        </p>
+                        <ul class="demo-features">
+                            <li>コード品質の多面的評価</li>
+                            <li>セキュリティとパフォーマンスの分析</li>
+                            <li>改善提案とマージ判定</li>
+                        </ul>
+                        <a href="https://github.com/NFTTechnology/NFTT-GitHub-Workflows/pull/27" class="demo-button" target="_blank">
+                            <span>🚀</span>
+                            デモPRを見る
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                    💡 これらのデモは実際に動作するワークフローです。フォークして自分のリポジトリでも試せます！
+                </p>
+            </div>
         </div>
     </section>
 
