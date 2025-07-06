@@ -591,6 +591,82 @@
         </div>
     </section>
 
+    <!-- インストールセクション -->
+    <section class="section" style="background-color: var(--surface); padding: 3rem 0;">
+        <div class="container">
+            <div class="section-header" style="justify-content: center; margin-bottom: 2rem;">
+                <span class="section-icon">🚀</span>
+                <h2>ワンクリックインストール</h2>
+            </div>
+            
+            <div style="max-width: 800px; margin: 0 auto;">
+                <p style="text-align: center; font-size: 1.125rem; color: var(--text-secondary); margin-bottom: 2rem;">
+                    5分以内で稼働開始できる効率的なセットアッププロセス
+                </p>
+                
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 class="card-title">
+                        <span>📦</span>
+                        方法1: インストールスクリプト
+                    </h3>
+                    <div style="background-color: var(--text-primary); color: var(--background); padding: 1rem; border-radius: var(--radius); margin: 1rem 0; font-family: monospace;">
+                        curl -fsSL https://raw.githubusercontent.com/NFTTechnology/NFTT-GitHub-Workflows/main/install.sh | bash
+                    </div>
+                    <p class="card-description">
+                        対話型インストーラーが環境をチェックし、最適な設定を提案します。
+                    </p>
+                </div>
+                
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 class="card-title">
+                        <span>🔧</span>
+                        方法2: GitHub CLI Extension
+                    </h3>
+                    <div style="background-color: var(--text-primary); color: var(--background); padding: 1rem; border-radius: var(--radius); margin: 1rem 0; font-family: monospace;">
+                        <div style="margin-bottom: 0.5rem;"># 拡張機能をインストール</div>
+                        <div style="margin-bottom: 0.5rem;">gh extension install NFTTechnology/NFTT-GitHub-Workflows --force</div>
+                        <div style="margin-top: 1rem;"># ワークフローをインストール</div>
+                        <div>gh nftt-workflows install</div>
+                    </div>
+                    <p class="card-description">
+                        GitHub CLIユーザー向けの統合されたインストール体験。
+                    </p>
+                </div>
+                
+                <div style="margin-top: 2rem; padding: 1.5rem; background-color: var(--background); border-radius: var(--radius-lg); border: 1px solid var(--border);">
+                    <h4 style="margin-bottom: 1rem; color: var(--primary-color);">
+                        <span>🔑</span> 必要なAPIキー
+                    </h4>
+                    <p style="margin-bottom: 1rem;">インストール後、以下のAPIキーを設定してください：</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;">
+                            <span style="color: var(--secondary-color); font-weight: bold;">✓</span>
+                            <code style="background-color: var(--surface); padding: 0.25rem 0.5rem; border-radius: 4px;">ANTHROPIC_API_KEY</code>
+                            - <a href="https://console.anthropic.com/" target="_blank" style="color: var(--primary-color);">取得する</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;">
+                            <span style="color: var(--secondary-color); font-weight: bold;">✓</span>
+                            <code style="background-color: var(--surface); padding: 0.25rem 0.5rem; border-radius: 4px;">OPENAI_API_KEY</code>
+                            - <a href="https://platform.openai.com/api-keys" target="_blank" style="color: var(--primary-color);">取得する</a>
+                        </li>
+                        <li>
+                            <span style="color: var(--secondary-color); font-weight: bold;">✓</span>
+                            <code style="background-color: var(--surface); padding: 0.25rem 0.5rem; border-radius: 4px;">GEMINI_API_KEY</code>
+                            - <a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: var(--primary-color);">取得する</a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div style="text-align: center; margin-top: 2rem;">
+                    <a href="3AI_ANALYZER_GUIDE.html" class="demo-button">
+                        <span>📖</span>
+                        詳細なセットアップガイド
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- メインコンテンツ -->
     <main class="container">
         <!-- はじめに -->
